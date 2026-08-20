@@ -1,0 +1,9 @@
+# Zálohy dát
+*.json
+
+# Windows systémové súbory
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk

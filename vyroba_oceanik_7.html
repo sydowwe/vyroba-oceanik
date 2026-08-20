@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Výroba — Oceanik</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+  :root {
+    --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3248;
+    --accent:#3b82f6; --green:#10b981; --amber:#f59e0b; --red:#ef4444;
+    --purple:#8b5cf6; --teal:#06b6d4; --orange:#f97316;
+    --text:#f1f5f9; --text2:#94a3b8; --text3:#475569;
+    --dut:#6366f1; --ciry:#06b6d4;
+    --s0:#64748b; --s1:#f59e0b; --s2:#8b5cf6; --s3:#06b6d4; --s4:#10b981; --s5:#3b82f6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+  ::-webkit-scrollbar{height:10px;width:10px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px}
+  ::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:50;}
+  .logo{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  header h1{font-size:15px;font-weight:600;line-height:1.2;}
+  header p{font-size:10.5px;color:var(--text2);margin-top:1px;}
+  .tabs{display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:3px;margin-left:8px;}
+  .tab{background:none;border:none;color:var(--text2);font-family:inherit;font-size:12.5px;font-weight:500;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all .14s;white-space:nowrap;}
+  .tab:hover{color:var(--text);}
+  .tab.on{background:var(--accent);color:#fff;font-weight:600;}
+  .hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+  .btn-sm{background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-family:inherit;font-size:11.5px;padding:6px 12px;border-radius:7px;cursor:pointer;transition:all .14s;display:inline-flex;align-items:center;gap:6px;}
+  .btn-sm:hover{border-color:var(--accent);color:var(--text);}
+  .btn-sm.danger:hover{border-color:var(--red);color:var(--red);}
+  .saved{font-size:10.5px;color:var(--text3);font-family:'JetBrains Mono',monospace;min-width:62px;}
+  .saved.flash{color:var(--green);}
+
+  .view{display:none;}
+  .view.on{display:block;}
+  .main{padding:20px 24px 40px;}
+  .section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);margin-bottom:12px;}
+
+  /* ==== KPI strip ==== */
+  .kpi{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:20px;}
+  .kpi-box{background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--c);border-radius:10px;padding:11px 13px;cursor:pointer;transition:all .14s;text-align:left;font-family:inherit;}
+  .kpi-box:hover{background:var(--surface2);transform:translateY(-1px);}
+  .kpi-box.on{background:var(--surface2);box-shadow:inset 0 0 0 1px var(--c);}
+  .kpi-n{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;line-height:1;color:var(--c);}
+  .kpi-l{font-size:10.5px;color:var(--text2);margin-top:5px;font-weight:500;}
+  .kpi-s{font-size:9px;color:var(--text3);margin-top:2px;}
+
+  /* ==== filter bar ==== */
+  .filterbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .search{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 12px;font-size:12.5px;font-family:inherit;width:210px;outline:none;}
+  .search:focus{border-color:var(--accent);}
+  .chips{display:flex;gap:5px;flex-wrap:wrap;}
+  .chip{background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-family:inherit;font-size:11.5px;padding:5px 11px;border-radius:20px;cursor:pointer;transition:all .13s;display:inline-flex;align-items:center;gap:6px;}
+  .chip:hover{color:var(--text);}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+  .chip .dot{width:7px;height:7px;border-radius:50%;background:var(--c);flex-shrink:0;}
+  .chip.on .dot{background:#fff;}
+  .fcount{font-size:11px;color:var(--text3);margin-left:auto;font-family:'JetBrains Mono',monospace;}
+
+  /* ==== table ==== */
+  .tblwrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;cursor:grab;}
+  .tblwrap.grabbing,.kanban.grabbing{cursor:grabbing;user-select:none;}
+  .kanban{cursor:grab;}
+  .scrollhint{font-size:10.5px;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+
+  /* ==== sklad ==== */
+  .stock-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px;}
+  .stock-card{background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--c);border-radius:11px;overflow:hidden;}
+  .stock-hdr{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--surface2);}
+  .stock-hdr b{font-size:11.5px;font-weight:700;color:var(--c);letter-spacing:.3px;}
+  .stock-sub{margin-left:auto;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;}
+  .stock-row{display:grid;grid-template-columns:1fr 54px 78px 78px;gap:8px;align-items:center;padding:7px 14px;border-bottom:1px solid var(--border);}
+  .stock-row:last-child{border-bottom:none;}
+  .stock-row.head{background:rgba(255,255,255,.02);padding-top:6px;padding-bottom:6px;}
+  .stock-row.head span{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);text-align:center;}
+  .stock-row.head span:first-child{text-align:left;}
+  .stock-l{font-size:12px;color:var(--text);}
+  .stock-need{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;text-align:center;color:var(--text2);}
+  .stock-in{text-align:center;font-family:'JetBrains Mono',monospace;font-size:13px;padding:4px 6px;}
+  .stock-d{font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:700;text-align:center;border-radius:6px;padding:4px 6px;}
+  .d-ok{background:rgba(16,185,129,.12);color:var(--green);}
+  .d-bad{background:rgba(239,68,68,.14);color:var(--red);}
+  .d-zero{background:rgba(148,163,184,.1);color:var(--text3);}
+  .shortlist{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.25);border-radius:11px;padding:14px 16px;margin-bottom:20px;}
+  .tab .badge-n{background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:20px;padding:0 5px;margin-left:5px;font-family:'JetBrains Mono',monospace;}
+  #mapBox{height:calc(100vh - 250px);min-height:420px;border-radius:12px;border:1px solid var(--border);background:var(--surface);}
+  .leaflet-container{background:#0f1117;font-family:'Inter',sans-serif;}
+  .leaflet-popup-content-wrapper{background:var(--surface2);color:var(--text);border-radius:9px;border:1px solid var(--border);}
+  .leaflet-popup-tip{background:var(--surface2);}
+  .leaflet-popup-content{font-size:12px;line-height:1.5;margin:10px 12px;}
+  .leaflet-control-zoom a{background:var(--surface2) !important;color:var(--text) !important;border-color:var(--border) !important;}
+  .leaflet-control-attribution{background:rgba(15,17,23,.75) !important;color:var(--text3) !important;font-size:9px !important;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--text2);margin-bottom:10px;}
+  .legend i{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:-1px;}
+  .toggle{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text2);cursor:pointer;}
+  .toggle input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;}
+  .maplayout{display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start;}
+  @media(max-width:1100px){.maplayout{grid-template-columns:1fr;}}
+  .shortlist h3{font-size:11.5px;font-weight:700;color:var(--red);margin-bottom:10px;letter-spacing:.3px;}
+  .short-item{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(239,68,68,.12);}
+  .short-item:last-child{border-bottom:none;}
+  .short-item b{font-family:'JetBrains Mono',monospace;color:var(--red);}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1280px;}
+  thead tr{background:var(--surface2);}
+  th{padding:9px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  th.c{text-align:center;}
+  tbody tr{border-bottom:1px solid var(--border);}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:rgba(59,130,246,0.04);}
+  td{padding:6px 9px;vertical-align:middle;}
+
+  input[type="text"],input[type="number"],select{
+    background:var(--surface2);border:1px solid var(--border);color:var(--text);
+    border-radius:6px;padding:5px 9px;font-size:12.5px;font-family:'Inter',sans-serif;
+    width:100%;outline:none;transition:border-color .15s,box-shadow .15s;
+  }
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,130,246,0.18);}
+  select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:22px;}
+  .stav-sel{font-weight:600;font-size:11.5px;min-width:132px;border-color:var(--c) !important;color:var(--c) !important;background:color-mix(in srgb, var(--c) 10%, var(--surface2)) !important;}
+
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .calc{font-family:'JetBrains Mono',monospace;font-size:13px;text-align:center;color:var(--text2);}
+  .calc-hi{color:var(--text);font-weight:500;}
+  .rnum{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);text-align:center;width:24px;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+  .badge-sp{background:rgba(245,158,11,0.12);color:var(--amber);font-family:'JetBrains Mono',monospace;font-size:12px;}
+  .badge-dl{background:rgba(16,185,129,0.12);color:var(--green);font-family:'JetBrains Mono',monospace;font-size:12px;}
+  .movecell{width:20px;padding:4px 2px 4px 6px !important;}
+  .mv{display:block;background:none;border:none;color:var(--text3);cursor:pointer;font-size:8px;line-height:1;padding:1px 2px;border-radius:3px;transition:color .12s;width:100%;font-family:inherit;}
+  .mv:hover{color:var(--accent);background:rgba(59,130,246,.1);}
+  .mv:disabled{opacity:.2;cursor:default;}
+  tr.moved td{background:rgba(59,130,246,.14) !important;transition:background .5s;}
+  .btn-del{background:none;border:none;cursor:pointer;color:var(--text3);padding:3px 5px;border-radius:4px;font-size:14px;transition:color .12s;line-height:1;}
+  .btn-del:hover{color:var(--red);}
+  .btn-add{margin-top:12px;background:none;border:1px dashed var(--border);color:var(--text2);padding:9px 18px;border-radius:8px;cursor:pointer;font-size:12.5px;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:7px;transition:all .14s;}
+  .btn-add:hover{border-color:var(--accent);color:var(--accent);}
+  .hruby-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(249,115,22,0.15);color:var(--orange);letter-spacing:0.3px;}
+
+  /* ==== kanban ==== */
+  .kanban{display:flex;gap:12px;overflow-x:auto;padding-bottom:14px;align-items:flex-start;}
+  .kcol{flex:0 0 258px;background:var(--surface);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;max-height:calc(100vh - 190px);}
+  .kcol.over{border-color:var(--c);box-shadow:0 0 0 2px color-mix(in srgb, var(--c) 30%, transparent);}
+  .kcol-hdr{padding:11px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--surface);border-radius:12px 12px 0 0;z-index:2;}
+  .kcol-dot{width:9px;height:9px;border-radius:50%;background:var(--c);flex-shrink:0;}
+  .kcol-name{font-size:11.5px;font-weight:700;color:var(--text);letter-spacing:0.2px;}
+  .kcol-n{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:1px 8px;}
+  .kcol-body{padding:9px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;min-height:70px;}
+  .kcard{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--c);border-radius:9px;padding:9px 11px;cursor:grab;transition:transform .1s,border-color .12s;}
+  .kcard:active{cursor:grabbing;}
+  .kcard:hover{border-color:var(--text3);}
+  .kcard.dragging{opacity:.4;}
+  .kc-name{font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .kc-meta{font-size:10.5px;color:var(--text2);margin-top:2px;font-family:'JetBrains Mono',monospace;}
+  .kc-tags{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap;}
+  .tag{font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:20px;font-family:'JetBrains Mono',monospace;letter-spacing:0.3px;}
+  .kc-foot{display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:7px;border-top:1px solid var(--border);}
+  .kc-btn{background:var(--surface);border:1px solid var(--border);color:var(--text2);border-radius:5px;width:23px;height:21px;font-size:12px;cursor:pointer;line-height:1;transition:all .12s;font-family:inherit;}
+  .kc-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+  .kc-btn:disabled{opacity:.25;cursor:default;}
+  .kc-date{margin-left:auto;font-size:9.5px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+  .kempty{font-size:11px;color:var(--text3);text-align:center;padding:16px 0;font-style:italic;}
+
+  /* ==== summary ==== */
+  .modebar{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:3px;margin-bottom:20px;width:fit-content;}
+  .mode{background:none;border:none;color:var(--text2);font-family:inherit;font-size:12px;font-weight:500;padding:7px 16px;border-radius:6px;cursor:pointer;transition:all .14s;}
+  .mode:hover{color:var(--text);}
+  .mode.on{background:var(--accent);color:#fff;font-weight:600;}
+  .sb-sec-hdr{display:flex;align-items:center;gap:7px;margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+  .sb-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .sb-sec-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;}
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-bottom:20px;}
+  .hl-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+  .hl-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;}
+  .hl-lbl{font-size:10px;color:var(--text2);margin-bottom:3px;}
+  .hl-lbl strong{display:block;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);margin-top:1px;font-weight:500;}
+  .hl-v{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;line-height:1;}
+  .hl-u{font-size:9px;color:var(--text3);margin-top:1px;}
+  .sb-total{border-radius:9px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
+  .sb-total-lbl{font-size:11px;color:var(--text2);}
+  .sb-total-lbl strong{display:block;font-size:13px;font-weight:600;color:var(--text);margin-top:2px;}
+  .sb-total-v{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;line-height:1;}
+  .sb-total-u{font-size:9px;color:var(--text2);text-align:right;margin-top:2px;}
+  .splitline{display:flex;gap:10px;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-top:7px;padding-top:7px;border-top:1px dashed var(--border);}
+  .splitline b{color:var(--text2);font-weight:600;}
+  .sub-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .empty{text-align:center;color:var(--text3);font-size:12px;padding:30px 0;}
+  .card{background:var(--surface2);border:1px solid var(--border);border-radius:9px;overflow:hidden;}
+  .card-hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:8px;}
+  .prog{height:5px;background:var(--surface2);border-radius:20px;overflow:hidden;display:flex;margin-bottom:18px;border:1px solid var(--border);}
+  .prog i{display:block;height:100%;}
+
+  @media(max-width:1000px){
+    .main{padding:14px;}
+    .kpi{grid-template-columns:repeat(3,1fr);}
+    header{padding:10px 14px;gap:10px;}
+    .tabs{margin-left:0;width:100%;order:3;}
+    .tab{flex:1;}
+    .hdr-right{width:100%;order:4;}
+  }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+<header>
+  <div class="logo">🏗️</div>
+  <div>
+    <h1>Výroba</h1>
+    <p>Materiál · fázy · montáž</p>
+  </div>
+  <div class="tabs">
+    <button class="tab on" data-view="tbl" onclick="setView('tbl')">Zastrešenia</button>
+    <button class="tab" data-view="ter" onclick="setView('ter')">Terasy</button>
+    <button class="tab" data-view="kan" onclick="setView('kan')">Kanban</button>
+    <button class="tab" data-view="sum" onclick="setView('sum')">Súhrn</button>
+    <button class="tab" data-view="skl" onclick="setView('skl')">Sklad</button>
+    <button class="tab" data-view="opr" onclick="setView('opr')">Opravy<span class="badge-n" id="opBadge" style="display:none"></span></button>
+    <button class="tab" data-view="map" onclick="setView('map')">Mapa</button>
+  </div>
+  <div class="hdr-right">
+    <span class="saved" id="saved"></span>
+    <button class="btn-sm" onclick="exportJSON()">↓ Export</button>
+    <button class="btn-sm" onclick="document.getElementById('imp').click()">↑ Import</button>
+    <input type="file" id="imp" accept="application/json" style="display:none" onchange="importJSON(this)">
+    <button class="btn-sm danger" onclick="wipeAll()">Vymazať</button>
+  </div>
+</header>
+
+<!-- ============ TABUĽKA ============ -->
+<div class="view on" id="v-tbl">
+  <div class="main">
+    <div class="kpi" id="kpiTbl"></div>
+    <div class="filterbar">
+      <input class="search" id="q" placeholder="Hľadať zákazníka…" oninput="applyFilter()">
+      <div class="chips" id="chips"></div>
+      <span class="fcount" id="fcount"></span>
+    </div>
+    <div class="scrollhint">↔ Tabuľku posunieš potiahnutím kdekoľvek v nej (mimo políčok). · ▲▼ vľavo mení poradie zákaziek.</div>
+    <div class="tblwrap">
+      <table>
+        <thead><tr>
+          <th></th><th></th><th>#</th><th>Meno</th><th>Mesto</th><th>Stav výroby</th><th>Model</th>
+          <th class="c">Hrubý profil</th><th class="c">Segmenty</th><th class="c">Šírka (m)</th>
+          <th class="c">Dĺžka seg.</th><th class="c">Typ poly.</th><th class="c">Farba (RAL)</th>
+          <th class="c">H</th><th class="c">O</th><th class="c">Spodok</th>
+          <th class="c">Dĺžka prof.</th><th class="c">Rozmer poly.</th><th class="c">Počet ks</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <button class="btn-add" onclick="addRow({});applyFilter();"><span style="font-size:16px">＋</span> Pridať zákazku</button>
+    <button class="btn-add" onclick="addRow({manual:true});applyFilter();" style="margin-left:6px;border-color:var(--text3)"><span style="font-size:16px">✏️</span> Manuálny riadok</button>
+  </div>
+</div>
+
+<!-- ============ KANBAN ============ -->
+<div class="view" id="v-kan">
+  <div class="main">
+    <div class="filterbar">
+      <input class="search" id="qk" placeholder="Hľadať zákazníka…" oninput="renderKanban()">
+      <span style="font-size:11px;color:var(--text3)">Kartu presuň myšou alebo použi šípky ‹ ›</span>
+    </div>
+    <div class="kanban" id="kanban"></div>
+  </div>
+</div>
+
+<!-- ============ SÚHRN ============ -->
+<div class="view" id="v-sum">
+  <div class="main">
+    <div class="kpi" id="kpiSum"></div>
+    <div class="prog" id="prog"></div>
+    <div class="modebar">
+      <button class="mode on" data-m="left" onclick="setMode('left')">Zostáva spracovať</button>
+      <button class="mode" data-m="done" onclick="setMode('done')">Už spotrebované</button>
+      <button class="mode" data-m="plan" onclick="setMode('plan')">Celkový plán</button>
+    </div>
+    <div id="sbContent"><div class="empty">Zadaj aspoň jednu zákazku</div></div>
+  </div>
+</div>
+<!-- ============ SKLAD ============ -->
+<div class="view" id="v-skl">
+  <div class="main">
+    <div class="filterbar" style="margin-bottom:18px">
+      <div class="modebar" style="margin-bottom:0">
+        <button class="mode on" data-sm="left" onclick="setStockMode('left')">Potreba: zostáva spracovať</button>
+        <button class="mode" data-sm="plan" onclick="setStockMode('plan')">Potreba: celý plán</button>
+      </div>
+      <button class="btn-sm" style="margin-left:auto" onclick="clearStock()">Vynulovať zásoby</button>
+    </div>
+    <div id="stockContent"></div>
+  </div>
+</div>
+
+<!-- ============ TERASY ============ -->
+<div class="view" id="v-ter">
+  <div class="main">
+    <div class="filterbar">
+      <span style="font-size:11px;color:var(--text3)">Zimné záhrady, okná, pergoly a prístrešky — mimo zastrešení bazénov.</span>
+      <span class="fcount" id="teCount"></span>
+    </div>
+    <div class="tblwrap" id="terWrap">
+      <table style="min-width:860px">
+        <thead><tr>
+          <th></th><th>#</th><th>Meno</th><th>Mesto</th><th>Typ</th><th class="c">Farba (RAL)</th><th>Stav</th>
+        </tr></thead>
+        <tbody id="teBody"></tbody>
+      </table>
+    </div>
+    <button class="btn-add" onclick="addTerasa({})"><span style="font-size:16px">＋</span> Pridať terasu</button>
+  </div>
+</div>
+
+<!-- ============ OPRAVY ============ -->
+<div class="view" id="v-opr">
+  <div class="main">
+    <div class="filterbar">
+      <label class="toggle"><input type="checkbox" id="opDone" onchange="renderOpravy()"> Zobraziť aj hotové</label>
+      <span class="fcount" id="opCount"></span>
+    </div>
+    <div class="tblwrap" id="oprWrap">
+      <table style="min-width:920px">
+        <thead><tr>
+          <th></th><th>#</th><th>Meno</th><th>Mesto</th><th>Čo treba opraviť</th><th>Priorita</th><th class="c">Stav</th>
+        </tr></thead>
+        <tbody id="opBody"></tbody>
+      </table>
+    </div>
+    <button class="btn-add" onclick="addOprava({})"><span style="font-size:16px">＋</span> Pridať opravu</button>
+  </div>
+</div>
+
+<!-- ============ MAPA ============ -->
+<div class="view" id="v-map">
+  <div class="main">
+    <div class="legend">
+      <label class="toggle"><input type="checkbox" id="mapZak" checked onchange="renderMap()"> Zastrešenia</label>
+      <label class="toggle"><input type="checkbox" id="mapTer" checked onchange="renderMap()"> Terasy</label>
+      <label class="toggle"><input type="checkbox" id="mapOpr" checked onchange="renderMap()"> Opravy</label>
+      <label class="toggle"><input type="checkbox" id="mapDone" onchange="renderMap()"> Aj vybavené</label>
+      <span style="width:1px;height:14px;background:var(--border)"></span>
+      <span><i style="background:#10b981"></i>Zastrešenie — na montáž</span>
+      <span><i style="background:#22d3ee;border-radius:2px"></i>Zimná záhrada</span>
+      <span><i style="background:#a3e635;border-radius:2px"></i>Okná</span>
+      <span><i style="background:#fb923c;border-radius:2px"></i>Pergola</span>
+      <span><i style="background:#f472b6;border-radius:2px"></i>Prístrešok</span>
+      <span><i style="background:#ef4444"></i>Oprava urgentná</span>
+      <span><i style="background:#f59e0b"></i>Oprava stredná</span>
+      <span><i style="background:#e879f9"></i>Oprava bežná</span>
+    </div>
+    <div id="mapWarn" style="font-size:11px;margin-bottom:8px;min-height:14px"></div>
+    <div class="maplayout">
+      <div id="mapBox"></div>
+      <div>
+        <div class="section-label">Oprava + montáž v okolí (do 35 km)</div>
+      <div style="font-size:10.5px;color:var(--text3);margin:-6px 0 10px">Zastrešenia iba v stave „Hotové“.</div>
+        <div id="nearPanel"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<datalist id="dl-mesta"></datalist>
+
+<script>
+/* ============================================================
+   OCEANIK — Sledovanie výroby
+   Dáta: localStorage. Prepnutie na server = prepíš iba Store.
+   ============================================================ */
+
+/* ---------- 1. STORE (jediné miesto, ktoré sa mení pri prechode na EasyPanel) ---------- */
+var STORAGE_KEY = 'oceanik_vyroba_v1';
+
+var Store = {
+  async all() {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch (e) { return null; }
+    // API verzia:  const r = await fetch('/api/orders'); return r.json();
+  },
+  async saveAll(list) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    // API verzia:  await fetch('/api/orders', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(list)});
+  },
+  async put(order) {
+    await Store.saveAll(rows);
+    // API verzia:  await fetch('/api/orders/'+order.id, {method:'PUT', ...});
+  },
+  async del(id) {
+    await Store.saveAll(rows);
+    // API verzia:  await fetch('/api/orders/'+id, {method:'DELETE'});
+  }
+};
+
+var saveTimer = null;
+function persist() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function () {
+    Store.saveAll(rows).then(function () {
+      var el = document.getElementById('saved');
+      el.textContent = '✓ uložené';
+      el.classList.add('flash');
+      setTimeout(function () { el.classList.remove('flash'); el.textContent = 'uložené'; }, 1400);
+    });
+  }, 250);
+}
+
+/* ---------- 2. MODEL ---------- */
+var rows = [];
+var nid = 1;
+
+var STAGES = [
+  { key: 'nova',   label: 'Nová',         short: 'Nová',      color: 'var(--s0)', sub: 'čaká na spustenie' },
+  { key: 'hlinik', label: 'Hliník',       short: 'Hliník',    color: 'var(--s1)', sub: 'hliník narezaný' },
+  { key: 'lak',    label: 'Nalakované',   short: 'Lak',       color: 'var(--s2)', sub: 'farba nastriekaná' },
+  { key: 'poly',   label: 'Polykarbonát', short: 'Poly',      color: 'var(--s3)', sub: 'poly nasadený' },
+  { key: 'hot',    label: 'Hotové',       short: 'Hotové',    color: 'var(--s4)', sub: 'pripravené na montáž' },
+  { key: 'mont',   label: 'Namontované',  short: 'Montáž',    color: 'var(--s5)', sub: 'odovzdané' }
+];
+var ST_ALU = 1, ST_LAK = 2, ST_POLY = 3;
+
+var MODELS = ['Klasik', 'Klasik Lux', 'Elegance Mini', 'Jednokolajove', 'Komfort', 'Praktik', 'Praktik Plus', 'Elegance'];
+var MODELS_DISPLAY = { 'Klasik': 'Klasik', 'Klasik Lux': 'Klasik Lux', 'Elegance Mini': 'Elegance Mini', 'Jednokolajove': 'Jednokoľajové', 'Komfort': 'Komfort', 'Praktik': 'Praktik', 'Praktik Plus': 'Praktik Plus', 'Elegance': 'Elegance' };
+
+function esc(s) {
+  return String(s === undefined || s === null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function today() { return new Date().toISOString().slice(0, 10); }
+function fmtDate(iso) { if (!iso) return ''; var p = iso.split('-'); return parseInt(p[2], 10) + '.' + parseInt(p[1], 10) + '.'; }
+
+/* ---------- 3. VÝPOČTOVÁ LOGIKA (nezmenená) ---------- */
+function calcH(typ, seg) {
+  if (!seg) return null;
+  if (typ === 'ciry') { if (seg === 2) return 3; if (seg === 3) return 5; if (seg === 4) return 7; }
+  else { if (seg === 2) return 2; if (seg === 3) return 3; if (seg === 4) return 4; }
+  return null;
+}
+function calcO(typ, seg) {
+  if (!seg) return null;
+  if (typ === 'ciry') { if (seg === 2) return 3; if (seg === 3) return 4; if (seg === 4) return 5; }
+  else { if (seg === 2) return 4; if (seg === 3) return 6; if (seg === 4) return 8; }
+  return null;
+}
+function calcSpodok(dlzkaTyp, seg) {
+  if (!dlzkaTyp || !seg) return null;
+  var d = dlzkaTyp === 'predlzene';
+  if (d && seg === 4) return '4x5'; if (d && seg === 3) return '3x5'; if (d && seg === 2) return '2x5';
+  if (!d && seg < 4) return '2x6'; return '3x6';
+}
+function calcDlzka(sirka) {
+  if (!sirka) return null;
+  if (sirka <= 3.3) return '5,2'; if (sirka <= 3.7) return '5,7'; return '6';
+}
+function calcRozmer(dlzkaTyp) { if (!dlzkaTyp) return null; return dlzkaTyp === 'standard' ? '2,1' : '1,25'; }
+function calcPocet(seg, dlzkaTyp) { if (!seg || !dlzkaTyp) return null; return seg * (dlzkaTyp === 'standard' ? 1 : 2); }
+
+/* jednotný výstup pre normálny aj manuálny riadok */
+function computeRow(r) {
+  if (r.manual) {
+    return {
+      valid: true,
+      H: parseInt(r.mH, 10) || 0, O: parseInt(r.mO, 10) || 0,
+      sp: r.mSp || null, dl: r.mDl || null,
+      rm: r.mRm || null, pc: parseInt(r.mPc, 10) || 0
+    };
+  }
+  if (!r.seg || !r.sirka || !r.dlzkaTyp) return { valid: false };
+  return {
+    valid: true,
+    H: calcH(r.typ, r.seg) || 0, O: calcO(r.typ, r.seg) || 0,
+    sp: calcSpodok(r.dlzkaTyp, r.seg), dl: calcDlzka(r.sirka),
+    rm: calcRozmer(r.dlzkaTyp), pc: calcPocet(r.seg, r.dlzkaTyp)
+  };
+}
+
+/* ---------- 4. CRUD ---------- */
+function addRow(d, skipRender) {
+  var id = d.id || nid++;
+  if (id >= nid) nid = id + 1;
+  var isHruby = d.model === 'Jednokolajove';
+  if (d.hruby !== undefined) isHruby = d.hruby;
+  var row = {
+    id: id,
+    manual: d.manual || false,
+    meno: d.meno || '',
+    mesto: d.mesto || '',
+    model: d.model || '',
+    hruby: isHruby,
+    seg: d.seg || '',
+    sirka: d.sirka || '',
+    dlzkaTyp: d.dlzkaTyp || 'standard',
+    typ: d.typ || 'dutinkovy',
+    farba: d.farba || '',
+    mH: d.mH || '', mO: d.mO || '', mSp: d.mSp || '',
+    mDl: d.mDl || '', mRm: d.mRm || '', mPc: d.mPc || '',
+    stav: typeof d.stav === 'number' ? d.stav : 0,
+    dates: d.dates || {}
+  };
+  rows.push(row);
+  appendRow(row);
+  if (!skipRender) { updateRowNumbers(); updateMoveButtons(); renderAll(); persist(); }
+  return row;
+}
+
+function removeRow(id) {
+  var r = getRow(id);
+  if (r && r.meno && !confirm('Zmazať zákazku „' + r.meno + '“?')) return;
+  rows = rows.filter(function (x) { return x.id !== id; });
+  var el = document.getElementById('tr-' + id);
+  if (el) el.remove();
+  updateRowNumbers(); updateMoveButtons(); renderAll(); persist();
+}
+
+function moveRow(id, dir) {
+  var i = -1;
+  for (var k = 0; k < rows.length; k++) if (rows[k].id === id) { i = k; break; }
+  if (i < 0) return;
+  var j = i + dir;
+  if (j < 0 || j >= rows.length) return;
+  var tmp = rows[i]; rows[i] = rows[j]; rows[j] = tmp;
+
+  var tr = document.getElementById('tr-' + id);
+  var other = document.getElementById('tr-' + rows[i].id);
+  if (tr && other) {
+    if (dir < 0) other.parentNode.insertBefore(tr, other);
+    else other.parentNode.insertBefore(tr, other.nextSibling);
+    tr.classList.add('moved');
+    setTimeout(function () { tr.classList.remove('moved'); }, 500);
+    tr.scrollIntoView({ block: 'nearest' });
+  }
+  updateRowNumbers();
+  updateMoveButtons();
+  persist();
+}
+
+function updateMoveButtons() {
+  rows.forEach(function (r, i) {
+    var tr = document.getElementById('tr-' + r.id);
+    if (!tr) return;
+    var b = tr.querySelectorAll('.mv');
+    if (b.length === 2) { b[0].disabled = (i === 0); b[1].disabled = (i === rows.length - 1); }
+  });
+}
+
+function getRow(id) {
+  for (var i = 0; i < rows.length; i++) if (rows[i].id === id) return rows[i];
+  return null;
+}
+
+function updField(id, field, value) {
+  var r = getRow(id);
+  if (!r) return;
+  if (field === 'seg') r[field] = value === '' ? '' : (parseInt(value, 10) || '');
+  else if (field === 'sirka') r[field] = value === '' ? '' : (parseFloat(value) || '');
+  else if (field === 'hruby') r.hruby = value === '1';
+  else if (field === 'mH' || field === 'mO' || field === 'mPc') r[field] = value === '' ? '' : (parseInt(value, 10) || '');
+  else r[field] = value;
+
+  if (field === 'model') {
+    r.hruby = value === 'Jednokolajove';
+    var sel = document.getElementById('hruby-sel-' + id);
+    if (sel) sel.value = r.hruby ? '1' : '0';
+  }
+  if (field === 'mesto') { mapSoon(); persist(); return; }
+  updateCalcCells(id);
+  renderAll();
+  persist();
+}
+
+/* ---------- 5. FÁZY ---------- */
+function setStage(id, s) {
+  var r = getRow(id);
+  if (!r) return;
+  s = Math.max(0, Math.min(STAGES.length - 1, s));
+  if (r.stav === s) return;
+  if (s > r.stav) {
+    for (var i = r.stav + 1; i <= s; i++) if (!r.dates[i]) r.dates[i] = today();
+  } else {
+    for (var j = s + 1; j < STAGES.length; j++) delete r.dates[j];
+  }
+  r.stav = s;
+  var sel = document.getElementById('stav-sel-' + id);
+  if (sel) { sel.value = String(s); sel.style.setProperty('--c', STAGES[s].color); }
+  renderAll(); persist(); applyFilter();
+}
+function bumpStage(id, delta) { var r = getRow(id); if (r) setStage(id, r.stav + delta); }
+
+/* ---------- 6. TABUĽKA ---------- */
+function stavSelect(r) {
+  var opts = STAGES.map(function (s, i) {
+    return '<option value="' + i + '"' + (r.stav === i ? ' selected' : '') + '>' + (i + 1) + '. ' + s.label + '</option>';
+  }).join('');
+  return '<select class="stav-sel" id="stav-sel-' + r.id + '" style="--c:' + STAGES[r.stav].color + '" ' +
+    'onchange="setStage(' + r.id + ', parseInt(this.value,10))">' + opts + '</select>';
+}
+
+function appendRow(r) {
+  var tbody = document.getElementById('tbody');
+  var tr = document.createElement('tr');
+  tr.id = 'tr-' + r.id;
+
+  var polySel = '<select style="min-width:110px" onchange="updField(' + r.id + ',\'typ\',this.value)">' +
+    '<option value="dutinkovy"' + (r.typ === 'dutinkovy' ? ' selected' : '') + '>Dutinkový</option>' +
+    '<option value="ciry"' + (r.typ === 'ciry' ? ' selected' : '') + '>Číry</option></select>';
+  var farbaInp = '<input type="text" value="' + esc(r.farba) + '" maxlength="10" style="width:74px;text-align:center;font-family:\'JetBrains Mono\',monospace;letter-spacing:1px" oninput="updField(' + r.id + ',\'farba\',this.value)">';
+  var hrubySel = '<select id="hruby-sel-' + r.id + '" style="width:104px;font-size:12px" onchange="updField(' + r.id + ',\'hruby\',this.value)">' +
+    '<option value="0"' + (r.hruby ? '' : ' selected') + '>Normálny</option>' +
+    '<option value="1"' + (r.hruby ? ' selected' : '') + '>Hrubý</option></select>';
+
+  if (r.manual) {
+    tr.style.background = 'rgba(148,163,184,0.04)';
+    var minp = function (f, v, ph, w) {
+      return '<input type="number" value="' + esc(v) + '" placeholder="' + ph + '" style="width:' + w + 'px;text-align:center;font-family:\'JetBrains Mono\',monospace;font-size:13px" oninput="updField(' + r.id + ',\'' + f + '\',this.value)">';
+    };
+    var mtext = function (f, v, ph, w) {
+      return '<input type="text" value="' + esc(v) + '" placeholder="' + ph + '" style="width:' + w + 'px;text-align:center;font-family:\'JetBrains Mono\',monospace;font-size:13px" oninput="updField(' + r.id + ',\'' + f + '\',this.value)">';
+    };
+    var rmSel = '<select style="width:82px;font-size:12px" onchange="updField(' + r.id + ',\'mRm\',this.value)">' +
+      '<option value="">—</option>' +
+      '<option value="2,1"' + (r.mRm === '2,1' ? ' selected' : '') + '>2,1 m</option>' +
+      '<option value="1,25"' + (r.mRm === '1,25' ? ' selected' : '') + '>1,25 m</option></select>';
+    tr.innerHTML =
+      '<td class="movecell">' +
+        '<button class="mv" title="Posunúť vyššie" onclick="moveRow(' + r.id + ',-1)">▲</button>' +
+        '<button class="mv" title="Posunúť nižšie" onclick="moveRow(' + r.id + ',1)">▼</button>' +
+      '</td>' +
+      '<td><button class="btn-del" onclick="removeRow(' + r.id + ')">✕</button></td>' +
+      '<td class="rnum" id="rn-' + r.id + '">?</td>' +
+      '<td><input type="text" value="' + esc(r.meno) + '" placeholder="Meno zákazníka" style="min-width:112px" oninput="updField(' + r.id + ',\'meno\',this.value)"></td>' +
+      '<td><input type="text" value="' + esc(r.mesto) + '" placeholder="Mesto" list="dl-mesta" style="min-width:104px" oninput="updField(' + r.id + ',\'mesto\',this.value)"></td>' +
+      '<td>' + stavSelect(r) + '</td>' +
+      '<td colspan="2" style="text-align:center">' +
+        '<span style="font-size:11px;color:var(--text3);font-style:italic;margin-right:10px">✏️ Manuálny</span>' + hrubySel +
+      '</td>' +
+      '<td colspan="3"></td>' +
+      '<td>' + polySel + '</td>' +
+      '<td>' + farbaInp + '</td>' +
+      '<td class="calc">' + minp('mH', r.mH, 'H', 46) + '</td>' +
+      '<td class="calc">' + minp('mO', r.mO, 'O', 46) + '</td>' +
+      '<td class="calc">' + mtext('mSp', r.mSp, '2x6', 54) + '</td>' +
+      '<td class="calc">' + mtext('mDl', r.mDl, '5,2', 54) + '</td>' +
+      '<td class="calc">' + rmSel + '</td>' +
+      '<td class="calc">' + minp('mPc', r.mPc, 'ks', 46) + '</td>';
+    tbody.appendChild(tr);
+    return;
+  }
+
+  var modelOpts = MODELS.map(function (m) {
+    return '<option value="' + m + '"' + (r.model === m ? ' selected' : '') + '>' + (MODELS_DISPLAY[m] || m) + '</option>';
+  }).join('');
+
+  tr.innerHTML =
+    '<td class="movecell">' +
+        '<button class="mv" title="Posunúť vyššie" onclick="moveRow(' + r.id + ',-1)">▲</button>' +
+        '<button class="mv" title="Posunúť nižšie" onclick="moveRow(' + r.id + ',1)">▼</button>' +
+      '</td>' +
+      '<td><button class="btn-del" onclick="removeRow(' + r.id + ')">✕</button></td>' +
+    '<td class="rnum" id="rn-' + r.id + '">?</td>' +
+    '<td><input type="text" value="' + esc(r.meno) + '" placeholder="Meno zákazníka" style="min-width:112px" oninput="updField(' + r.id + ',\'meno\',this.value)"></td>' +
+    '<td><input type="text" value="' + esc(r.mesto) + '" placeholder="Mesto" list="dl-mesta" style="min-width:104px" oninput="updField(' + r.id + ',\'mesto\',this.value)"></td>' +
+      '<td>' + stavSelect(r) + '</td>' +
+    '<td><select style="min-width:132px" onchange="updField(' + r.id + ',\'model\',this.value)"><option value="">— model —</option>' + modelOpts + '</select></td>' +
+    '<td style="text-align:center;min-width:112px">' + hrubySel + '</td>' +
+    '<td><input type="number" value="' + esc(r.seg) + '" min="2" max="4" placeholder="2–4" style="width:62px;text-align:center" oninput="updField(' + r.id + ',\'seg\',this.value)"></td>' +
+    '<td><input type="number" value="' + esc(r.sirka) + '" step="0.1" min="0.5" max="10" placeholder="3.3" style="width:74px;text-align:center" oninput="updField(' + r.id + ',\'sirka\',this.value)"></td>' +
+    '<td><select style="min-width:110px" onchange="updField(' + r.id + ',\'dlzkaTyp\',this.value)">' +
+      '<option value="standard"' + (r.dlzkaTyp === 'standard' ? ' selected' : '') + '>Štandard</option>' +
+      '<option value="predlzene"' + (r.dlzkaTyp === 'predlzene' ? ' selected' : '') + '>Predĺžené</option></select></td>' +
+    '<td>' + polySel + '</td>' +
+    '<td>' + farbaInp + '</td>' +
+    '<td class="calc" id="h-' + r.id + '">—</td>' +
+    '<td class="calc" id="o-' + r.id + '">—</td>' +
+    '<td class="calc" id="sp-' + r.id + '">—</td>' +
+    '<td class="calc" id="dl-' + r.id + '">—</td>' +
+    '<td class="calc" id="rm-' + r.id + '">—</td>' +
+    '<td class="calc" id="pc-' + r.id + '">—</td>';
+
+  tbody.appendChild(tr);
+  updateCalcCells(r.id);
+}
+
+function updateCalcCells(id) {
+  var r = getRow(id);
+  if (!r || r.manual) return;
+  var c = computeRow(r);
+  var dash = '<span style="color:var(--text3)">—</span>';
+  function set(k, html) { var el = document.getElementById(k + '-' + id); if (el) el.innerHTML = html; }
+  if (!c.valid) { ['h', 'o', 'sp', 'dl', 'rm', 'pc'].forEach(function (k) { set(k, dash); }); return; }
+  set('h', '<span class="calc-hi">' + c.H + '</span>');
+  set('o', '<span class="calc-hi">' + c.O + '</span>');
+  set('sp', c.sp ? '<span class="badge badge-sp">' + c.sp + '</span>' : dash);
+  set('dl', c.dl ? '<span class="badge badge-dl">' + c.dl + ' m</span>' : dash);
+  set('rm', c.rm ? '<span class="mono" style="font-size:12px;color:var(--text)">' + c.rm + ' m</span>' : dash);
+  set('pc', c.pc !== null ? '<span class="calc-hi">' + c.pc + '</span>' : dash);
+}
+
+function updateRowNumbers() {
+  var n = 0;
+  rows.forEach(function (r) {
+    var tr = document.getElementById('tr-' + r.id);
+    var el = document.getElementById('rn-' + r.id);
+    if (!el) return;
+    if (tr && tr.style.display === 'none') { el.textContent = '·'; return; }
+    n++; el.textContent = n;
+  });
+}
+
+/* ---------- 7. FILTER ---------- */
+var filterStage = null;
+function setFilter(s) {
+  filterStage = (filterStage === s) ? null : s;
+  setView('tbl');
+  applyFilter();
+}
+function applyFilter() {
+  var q = (document.getElementById('q').value || '').toLowerCase().trim();
+  var shown = 0;
+  rows.forEach(function (r) {
+    var tr = document.getElementById('tr-' + r.id);
+    if (!tr) return;
+    var ok = (filterStage === null || r.stav === filterStage) &&
+             (!q || (r.meno || '').toLowerCase().indexOf(q) !== -1);
+    tr.style.display = ok ? '' : 'none';
+    if (ok) shown++;
+  });
+  updateRowNumbers();
+  document.getElementById('fcount').textContent = shown + ' / ' + rows.length + ' zákaziek';
+  document.querySelectorAll('#chips .chip').forEach(function (c) {
+    var v = c.getAttribute('data-s');
+    c.classList.toggle('on', (v === 'all' && filterStage === null) || (v !== 'all' && parseInt(v, 10) === filterStage));
+  });
+  document.querySelectorAll('#kpiTbl .kpi-box').forEach(function (b) {
+    b.classList.toggle('on', parseInt(b.getAttribute('data-s'), 10) === filterStage);
+  });
+}
+</script>
+<script>
+/* ---------- 8. AGREGÁCIA ---------- */
+function aggregate(list) {
+  var a = {
+    H_by: {}, O_by: {}, Hh_by: {}, Oh_by: {},
+    totalH: 0, totalO: 0, totalHh: 0, totalOh: 0,
+    spodok5: 0, spodok6: 0, spodok5h: 0, spodok6h: 0,
+    poly: { dutinkovy: { '2,1': 0, '1,25': 0 }, ciry: { '2,1': 0, '1,25': 0 } },
+    hasHruby: false
+  };
+  list.forEach(function (r) {
+    var c = computeRow(r);
+    if (!c.valid) return;
+    a.totalH += c.H; a.totalO += c.O;
+    if (c.dl) { a.H_by[c.dl] = (a.H_by[c.dl] || 0) + c.H; a.O_by[c.dl] = (a.O_by[c.dl] || 0) + c.O; }
+    if (c.sp) { var p = String(c.sp).split('x'); var n = parseInt(p[0], 10) || 0; if (p[1] === '5') a.spodok5 += n; if (p[1] === '6') a.spodok6 += n; }
+    if (c.rm && c.pc > 0) { var k = r.typ === 'ciry' ? 'ciry' : 'dutinkovy'; if (a.poly[k][c.rm] !== undefined) a.poly[k][c.rm] += c.pc; }
+    if (r.hruby) {
+      a.hasHruby = true;
+      a.totalHh += c.H; a.totalOh += c.O;
+      if (c.dl) { a.Hh_by[c.dl] = (a.Hh_by[c.dl] || 0) + c.H; a.Oh_by[c.dl] = (a.Oh_by[c.dl] || 0) + c.O; }
+      if (c.sp) { var p2 = String(c.sp).split('x'); var n2 = parseInt(p2[0], 10) || 0; if (p2[1] === '5') a.spodok5h += n2; if (p2[1] === '6') a.spodok6h += n2; }
+    }
+  });
+  a.totalSpodok = a.spodok5 + a.spodok6;
+  a.totalSpodokH = a.spodok5h + a.spodok6h;
+  a.totalDut = a.poly.dutinkovy['2,1'] + a.poly.dutinkovy['1,25'];
+  a.totalCiry = a.poly.ciry['2,1'] + a.poly.ciry['1,25'];
+  return a;
+}
+
+/* podmnožiny podľa fázy — hliník sa míňa pri 1, farba pri 2, poly pri 3 */
+function subset(threshold, mode) {
+  if (mode === 'plan') return rows;
+  if (mode === 'done') return rows.filter(function (r) { return r.stav >= threshold; });
+  return rows.filter(function (r) { return r.stav < threshold; });
+}
+
+/* ---------- 9. KANBAN ---------- */
+function renderKanban() {
+  var q = (document.getElementById('qk').value || '').toLowerCase().trim();
+  var host = document.getElementById('kanban');
+  var html = '';
+  STAGES.forEach(function (s, i) {
+    var list = rows.filter(function (r) {
+      return r.stav === i && (!q || (r.meno || '').toLowerCase().indexOf(q) !== -1);
+    });
+    html += '<div class="kcol" style="--c:' + s.color + '" data-stage="' + i + '" ' +
+      'ondragover="kDragOver(event,' + i + ')" ondragleave="kDragLeave(' + i + ')" ondrop="kDrop(event,' + i + ')">' +
+      '<div class="kcol-hdr"><div class="kcol-dot"></div><span class="kcol-name">' + s.label + '</span>' +
+      '<span class="kcol-n">' + list.length + '</span></div><div class="kcol-body">';
+    if (!list.length) html += '<div class="kempty">prázdne</div>';
+    list.forEach(function (r) { html += kCard(r, i); });
+    html += '</div></div>';
+  });
+  host.innerHTML = html;
+}
+
+function kCard(r, i) {
+  var meta = r.manual
+    ? 'manuálny · ' + (r.mPc ? r.mPc + ' ks' : '—')
+    : ((MODELS_DISPLAY[r.model] || r.model || '—') + (r.seg ? ' · ' + r.seg + ' seg' : '') + (r.sirka ? ' · ' + String(r.sirka).replace('.', ',') + ' m' : ''));
+  var tags = '';
+  if (r.farba) tags += '<span class="tag" style="background:rgba(148,163,184,.14);color:var(--text)">RAL ' + esc(r.farba) + '</span>';
+  tags += r.typ === 'ciry'
+    ? '<span class="tag" style="background:rgba(6,182,212,.15);color:var(--ciry)">Číry</span>'
+    : '<span class="tag" style="background:rgba(99,102,241,.15);color:var(--dut)">Dutinkový</span>';
+  if (r.hruby) tags += '<span class="tag" style="background:rgba(249,115,22,.15);color:var(--orange)">Hrubý</span>';
+  var d = r.dates && r.dates[i] ? fmtDate(r.dates[i]) : '';
+  return '<div class="kcard" style="--c:' + STAGES[i].color + '" draggable="true" ' +
+    'ondragstart="kDragStart(event,' + r.id + ')" ondragend="kDragEnd(event)">' +
+    '<div class="kc-name">' + (esc(r.meno) || '<span style="color:var(--text3)">bez mena</span>') + '</div>' +
+    '<div class="kc-meta">' + esc(meta) + '</div>' +
+    '<div class="kc-tags">' + tags + '</div>' +
+    '<div class="kc-foot">' +
+      '<button class="kc-btn" onclick="bumpStage(' + r.id + ',-1)"' + (i === 0 ? ' disabled' : '') + '>‹</button>' +
+      '<button class="kc-btn" onclick="bumpStage(' + r.id + ',1)"' + (i === STAGES.length - 1 ? ' disabled' : '') + '>›</button>' +
+      '<span class="kc-date">' + (d ? 'od ' + d : '') + '</span>' +
+    '</div></div>';
+}
+
+var dragId = null;
+function kDragStart(e, id) { dragId = id; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(id)); } catch (x) {} }
+function kDragEnd(e) { e.currentTarget.classList.remove('dragging'); document.querySelectorAll('.kcol').forEach(function (c) { c.classList.remove('over'); }); }
+function kDragOver(e, i) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('over'); }
+function kDragLeave(i) { var el = document.querySelector('.kcol[data-stage="' + i + '"]'); if (el) el.classList.remove('over'); }
+function kDrop(e, i) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('over');
+  var id = dragId || parseInt(e.dataTransfer.getData('text/plain'), 10);
+  if (id) setStage(id, i);
+  dragId = null;
+}
+
+/* ---------- 10. KPI + PROGRESS ---------- */
+function renderKpi() {
+  var counts = STAGES.map(function (_, i) { return rows.filter(function (r) { return r.stav === i; }).length; });
+  var html = STAGES.map(function (s, i) {
+    return '<button class="kpi-box" data-s="' + i + '" style="--c:' + s.color + '" onclick="setFilter(' + i + ')">' +
+      '<div class="kpi-n">' + counts[i] + '</div>' +
+      '<div class="kpi-l">' + s.label + '</div>' +
+      '<div class="kpi-s">' + s.sub + '</div></button>';
+  }).join('');
+  document.getElementById('kpiTbl').innerHTML = html;
+  document.getElementById('kpiSum').innerHTML = html;
+
+  var total = rows.length || 1;
+  document.getElementById('prog').innerHTML = STAGES.map(function (s, i) {
+    return counts[i] ? '<i style="width:' + (counts[i] / total * 100) + '%;background:' + s.color + '" title="' + s.label + ': ' + counts[i] + '"></i>' : '';
+  }).join('');
+}
+
+/* ---------- 11. SÚHRN ---------- */
+var mode = 'left';
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-m') === m); });
+  renderSummary();
+}
+
+function renderSummary() {
+  var sb = document.getElementById('sbContent');
+  if (!rows.length) { sb.innerHTML = '<div class="empty">Zadaj aspoň jednu zákazku</div>'; return; }
+
+  var aluAll = aggregate(rows), aluDone = aggregate(subset(ST_ALU, 'done')), aluLeft = aggregate(subset(ST_ALU, 'left'));
+  var polAll = aggregate(rows), polDone = aggregate(subset(ST_POLY, 'done')), polLeft = aggregate(subset(ST_POLY, 'left'));
+  var alu = mode === 'plan' ? aluAll : mode === 'done' ? aluDone : aluLeft;
+  var pol = mode === 'plan' ? polAll : mode === 'done' ? polDone : polLeft;
+
+  var modeNote = mode === 'plan' ? 'celý plán' : mode === 'done' ? 'už spotrebované' : 'ešte treba';
+  var aluNote = mode === 'left' ? 'ešte nenarezané' : mode === 'done' ? 'narezané' : 'celý plán';
+  var polNote = mode === 'left' ? 'ešte nenasadené' : mode === 'done' ? 'nasadené' : 'celý plán';
+
+  function secHdr(color, name, note) {
+    return '<div style="margin-bottom:18px"><div class="sb-sec-hdr"><div class="sb-dot" style="background:' + color + '"></div>' +
+      '<span class="sb-sec-name" style="color:' + color + '">' + name + '</span>' +
+      '<span style="margin-left:auto;font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">' + note + '</span></div>';
+  }
+  function hlCard(lbl, sub, val, color) {
+    return '<div class="hl-card"><div class="hl-lbl">' + lbl + '<strong>' + sub + '</strong></div>' +
+      '<div class="hl-v" style="color:' + (val ? color : 'var(--text3)') + '">' + val + '</div><div class="hl-u">kusov</div></div>';
+  }
+  function totalBox(rgb, color, label, sub, val, doneV, planV) {
+    return '<div class="sb-total" style="background:rgba(' + rgb + ',0.06);border:1px solid rgba(' + rgb + ',0.2);display:block">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between">' +
+        '<div class="sb-total-lbl">' + label + '<strong>' + sub + '</strong></div>' +
+        '<div><div class="sb-total-v" style="color:' + color + '">' + val + '</div><div class="sb-total-u">kusov</div></div>' +
+      '</div>' +
+      '<div class="splitline"><span>plán <b>' + planV + '</b></span><span>spotrebované <b>' + doneV + '</b></span><span>zostáva <b>' + (planV - doneV) + '</b></span></div>' +
+      '</div>';
+  }
+  function lensSection(byMap, color) {
+    var lens = ['5,2', '5,7', '6'].filter(function (l) { return byMap[l]; });
+    var h = '<div class="hl-grid">';
+    if (!lens.length) h += '<div style="grid-column:span 2;color:var(--text3);font-size:12px;padding:8px 0">—</div>';
+    else {
+      lens.forEach(function (l) { h += hlCard('dĺžka', l + ' m', byMap[l] || 0, color); });
+      if (lens.length === 1) h += hlCard('dĺžka', '—', 0, color);
+    }
+    return h + '</div>';
+  }
+
+  var html = '<div class="summary-grid">';
+  html += '<div>' + secHdr('var(--amber)', 'Hliník — H profil', aluNote) + lensSection(alu.H_by, 'var(--amber)') +
+    totalBox('245,158,11', 'var(--amber)', 'Celkom H', 'všetky dĺžky', alu.totalH, aluDone.totalH, aluAll.totalH) + '</div></div>';
+  html += '<div>' + secHdr('var(--purple)', 'Hliník — O profil', aluNote) + lensSection(alu.O_by, 'var(--purple)') +
+    totalBox('139,92,246', 'var(--purple)', 'Celkom O', 'všetky dĺžky', alu.totalO, aluDone.totalO, aluAll.totalO) + '</div></div>';
+  html += '<div>' + secHdr('var(--teal)', 'Spodky', aluNote) +
+    '<div class="hl-grid">' + hlCard('typ', '×6', alu.spodok6, 'var(--teal)') + hlCard('typ', '×5', alu.spodok5, 'var(--teal)') + '</div>' +
+    totalBox('6,182,212', 'var(--teal)', 'Celkom spodky', '×5 + ×6', alu.totalSpodok, aluDone.totalSpodok, aluAll.totalSpodok) + '</div></div>';
+  html += '<div>' + secHdr('var(--dut)', 'Polykarbonát — Dutinkový', polNote) +
+    '<div class="hl-grid">' + hlCard('rozmer', '2,1 m', pol.poly.dutinkovy['2,1'], 'var(--dut)') + hlCard('rozmer', '1,25 m', pol.poly.dutinkovy['1,25'], 'var(--dut)') + '</div>' +
+    totalBox('99,102,241', 'var(--dut)', 'Dutinkový spolu', '2,1 + 1,25', pol.totalDut, polDone.totalDut, polAll.totalDut) + '</div></div>';
+  html += '<div>' + secHdr('var(--ciry)', 'Polykarbonát — Číry', polNote) +
+    '<div class="hl-grid">' + hlCard('rozmer', '2,1 m', pol.poly.ciry['2,1'], 'var(--ciry)') + hlCard('rozmer', '1,25 m', pol.poly.ciry['1,25'], 'var(--ciry)') + '</div>' +
+    totalBox('6,182,212', 'var(--ciry)', 'Číry spolu', '2,1 + 1,25', pol.totalCiry, polDone.totalCiry, polAll.totalCiry) + '</div></div>';
+  html += '</div>';
+
+  /* ===== hrubý profil ===== */
+  if (aluAll.hasHruby) {
+    html += '<div style="margin-top:24px;border-top:1px solid var(--border);padding-top:22px;">' +
+      '<div class="sub-section-title" style="color:var(--orange)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange)"></div>Súhrn materiálu — Hrubý profil</div>' +
+      '<div class="summary-grid">' +
+      '<div>' + secHdr('var(--orange)', 'Hrubý profil — H', aluNote) + lensSection(alu.Hh_by, 'var(--orange)') +
+        totalBox('249,115,22', 'var(--orange)', 'Celkom H hrubý', 'všetky dĺžky', alu.totalHh, aluDone.totalHh, aluAll.totalHh) + '</div></div>' +
+      '<div>' + secHdr('var(--orange)', 'Hrubý profil — O', aluNote) + lensSection(alu.Oh_by, 'var(--orange)') +
+        totalBox('249,115,22', 'var(--orange)', 'Celkom O hrubý', 'všetky dĺžky', alu.totalOh, aluDone.totalOh, aluAll.totalOh) + '</div></div>' +
+      '<div>' + secHdr('var(--orange)', 'Hrubý profil — Spodky', aluNote) +
+        '<div class="hl-grid">' + hlCard('typ', '×6', alu.spodok6h, 'var(--orange)') + hlCard('typ', '×5', alu.spodok5h, 'var(--orange)') + '</div>' +
+        totalBox('249,115,22', 'var(--orange)', 'Spodky hrubý', '×5 + ×6', alu.totalSpodokH, aluDone.totalSpodokH, aluAll.totalSpodokH) + '</div></div>' +
+      '</div></div>';
+  }
+
+  /* ===== farby RAL ===== */
+  var farbaSrc = subset(ST_LAK, mode);
+  var farbaNote = mode === 'left' ? 'ešte lakovať' : mode === 'done' ? 'nalakované' : 'celý plán';
+  var fmap = {};
+  farbaSrc.forEach(function (r) {
+    var f = (r.farba || '').trim(); if (!f) return;
+    if (!fmap[f]) fmap[f] = [];
+    if ((r.meno || '').trim()) fmap[f].push({ n: r.meno.trim(), t: null });
+  });
+  /* terasy sa lakujú tiež — pridáme ich do rovnakého prehľadu */
+  terasy.filter(function (t) {
+    if (mode === 'plan') return true;
+    return mode === 'done' ? t.stav >= ST_LAK : t.stav < ST_LAK;
+  }).forEach(function (t) {
+    var f = (t.farba || '').trim(); if (!f) return;
+    if (!fmap[f]) fmap[f] = [];
+    if ((t.meno || '').trim()) fmap[f].push({ n: t.meno.trim(), t: terasaTyp(t.typ) });
+  });
+  var fkeys = Object.keys(fmap).sort();
+  html += '<div style="margin-top:24px;border-top:1px solid var(--border);padding-top:22px;">' +
+    '<div class="sub-section-title" style="color:var(--text2)"><div style="width:8px;height:8px;border-radius:50%;background:var(--text3)"></div>' +
+    'Súhrn farieb RAL <span style="margin-left:auto;font-weight:500;letter-spacing:0;text-transform:none;color:var(--text3)">' + farbaNote + '</span></div>';
+  if (!fkeys.length) html += '<div class="empty">Žiadne farby v tejto skupine</div>';
+  else {
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px;">';
+    fkeys.forEach(function (f) {
+      var names = fmap[f];
+      var list = names.length
+        ? names.map(function (x) {
+            return '<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);padding:2px 0;border-bottom:1px solid var(--border)">' +
+              '<span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(x.n) + '</span>' +
+              (x.t ? '<span style="font-size:8.5px;font-weight:700;letter-spacing:.3px;padding:1px 5px;border-radius:20px;background:color-mix(in srgb,' + x.t.c + ' 18%, transparent);color:' + x.t.c + ';flex-shrink:0">' + esc(x.t.l) + '</span>' : '') +
+              '</div>';
+          }).join('')
+        : '<div style="font-size:11px;color:var(--text3);font-style:italic">—</div>';
+      html += '<div class="card"><div class="card-hdr">' +
+        '<span style="font-family:\'JetBrains Mono\',monospace;font-size:15.5px;font-weight:700">RAL ' + esc(f) + '</span>' +
+        '<span style="margin-left:auto;font-size:10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:20px;padding:1px 7px;color:var(--text3)">' + names.length + ' ks</span>' +
+        '</div><div style="padding:6px 12px 8px">' + list + '</div></div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+
+  /* ===== čo čaká na ďalší krok ===== */
+  html += renderQueues();
+  sb.innerHTML = html;
+}
+
+function renderQueues() {
+  var waitLak = rows.filter(function (r) { return r.stav === 1; });
+  var waitPoly = rows.filter(function (r) { return r.stav === 2; });
+  var waitMont = rows.filter(function (r) { return r.stav === 4; });
+  if (!waitLak.length && !waitPoly.length && !waitMont.length) return '';
+
+  var h = '<div style="margin-top:24px;border-top:1px solid var(--border);padding-top:22px;">' +
+    '<div class="sub-section-title" style="color:var(--text2)"><div style="width:8px;height:8px;border-radius:50%;background:var(--text2)"></div>Fronta — čo je na rade</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">';
+
+  /* lakovanie: zoskupené podľa RAL */
+  if (waitLak.length) {
+    var g = {};
+    waitLak.forEach(function (r) { var f = (r.farba || '—').trim() || '—'; (g[f] = g[f] || []).push(r.meno || 'bez mena'); });
+    var body = Object.keys(g).sort().map(function (f) {
+      return '<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11.5px">' +
+        '<span class="mono" style="font-weight:600;min-width:64px">' + esc(f) + '</span>' +
+        '<span style="color:var(--text2);overflow:hidden;text-overflow:ellipsis">' + esc(g[f].join(', ')) + '</span></div>';
+    }).join('');
+    h += queueCard('var(--s2)', 'Čaká na lakovanie', waitLak.length, body);
+  }
+  /* polykarbonát: podľa typu a rozmeru */
+  if (waitPoly.length) {
+    var agg = aggregate(waitPoly);
+    var body2 = [
+      ['Dutinkový 2,1 m', agg.poly.dutinkovy['2,1']], ['Dutinkový 1,25 m', agg.poly.dutinkovy['1,25']],
+      ['Číry 2,1 m', agg.poly.ciry['2,1']], ['Číry 1,25 m', agg.poly.ciry['1,25']]
+    ].filter(function (x) { return x[1]; }).map(function (x) {
+      return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:11.5px">' +
+        '<span style="color:var(--text2)">' + x[0] + '</span><span class="mono" style="font-weight:700">' + x[1] + ' ks</span></div>';
+    }).join('');
+    h += queueCard('var(--s3)', 'Čaká na polykarbonát', waitPoly.length, body2 || '<div style="font-size:11px;color:var(--text3);padding:6px 0">Bez zadaného rozmeru</div>');
+  }
+  /* montáž */
+  if (waitMont.length) {
+    var body3 = waitMont.map(function (r) {
+      return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:11.5px">' +
+        '<span>' + esc(r.meno || 'bez mena') + '</span>' +
+        '<span class="mono" style="color:var(--text3);font-size:10px">' + (r.dates && r.dates[4] ? fmtDate(r.dates[4]) : '') + '</span></div>';
+    }).join('');
+    h += queueCard('var(--s4)', 'Hotové — čaká na montáž', waitMont.length, body3);
+  }
+  return h + '</div></div>';
+}
+function queueCard(color, title, n, body) {
+  return '<div class="card"><div class="card-hdr" style="border-left:3px solid ' + color + '">' +
+    '<span style="font-size:11.5px;font-weight:700">' + title + '</span>' +
+    '<span style="margin-left:auto;font-family:\'JetBrains Mono\',monospace;font-size:11px;color:' + color + ';font-weight:700">' + n + '</span>' +
+    '</div><div style="padding:4px 12px 10px">' + body + '</div></div>';
+}
+
+/* ---------- 12. VIEWS ---------- */
+function setView(v) {
+  ['tbl', 'kan', 'sum', 'skl', 'ter', 'opr', 'map'].forEach(function (k) {
+    document.getElementById('v-' + k).classList.toggle('on', k === v);
+  });
+  document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('on', t.getAttribute('data-view') === v); });
+  if (v === 'kan') renderKanban();
+  if (v === 'ter') renderTerasy();
+  if (v === 'opr') renderOpravy();
+  if (v === 'map') { initMap(); setTimeout(function () { if (map) { map.invalidateSize(); renderMap(); } }, 60); }
+}
+
+function renderAll() { renderKpi(); renderKanban(); renderSummary(); renderStock(); renderTerasy(); renderOpravy(); renderMap(); }
+
+/* ---------- 13. EXPORT / IMPORT ---------- */
+function exportJSON() {
+  var blob = new Blob([JSON.stringify({ zakazky: rows, terasy: terasy, opravy: opravy, sklad: stock }, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'oceanik-vyroba-' + today() + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function importJSON(input) {
+  var f = input.files[0]; if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function () {
+    try {
+      var raw = JSON.parse(rd.result);
+      var data = Array.isArray(raw) ? raw : raw.zakazky;
+      if (!Array.isArray(data)) throw new Error('Súbor neobsahuje zoznam zákaziek.');
+      if (!confirm('Nahradiť ' + rows.length + ' zákaziek za ' + data.length + ' zo súboru?')) return;
+      if (raw && raw.opravy) {
+        opravy = []; oid = 1;
+        raw.opravy.forEach(function (o) { addOprava(o, true); });
+        saveOpravy();
+      }
+      if (raw && raw.terasy) {
+        terasy = []; tid = 1;
+        raw.terasy.forEach(function (t) { addTerasa(t, true); });
+        saveTerasy();
+      }
+      if (raw && raw.sklad) { stock = raw.sklad; StockStore.save(stock); }
+      loadRows(data);
+      persist();
+    } catch (e) {
+      alert('Import zlyhal: ' + e.message);
+    }
+    input.value = '';
+  };
+  rd.readAsText(f);
+}
+function wipeAll() {
+  if (!confirm('Zmazať všetkých ' + rows.length + ' zákaziek? Odporúčam si najprv spraviť Export.')) return;
+  loadRows([]);
+  persist();
+}
+
+function loadRows(data) {
+  rows = []; nid = 1;
+  document.getElementById('tbody').innerHTML = '';
+  data.forEach(function (d) { addRow(d, true); });
+  updateRowNumbers();
+  updateMoveButtons();
+  renderAll();
+  applyFilter();
+}
+
+/* ---------- 14. CHIPS ---------- */
+function renderChips() {
+  var h = '<button class="chip on" data-s="all" onclick="filterStage=null;applyFilter()">Všetky</button>';
+  STAGES.forEach(function (s, i) {
+    h += '<button class="chip" data-s="' + i + '" style="--c:' + s.color + '" onclick="setFilter(' + i + ')"><span class="dot"></span>' + s.label + '</button>';
+  });
+  document.getElementById('chips').innerHTML = h;
+}
+
+/* ---------- 15. SEED (tvojich 38 zákaziek) ---------- */
+var SEED = [
+  { meno: 'Mahrík', model: 'Praktik', hruby: false, seg: 3, sirka: 4.4, dlzkaTyp: 'predlzene', typ: 'ciry', farba: '7016' },
+  { meno: 'Kardoš', model: 'Jednokolajove', hruby: true, seg: 4, sirka: 3.93, dlzkaTyp: 'predlzene', typ: 'ciry', farba: '7016M' },
+  { meno: 'Polák', model: 'Elegance Mini', hruby: false, seg: 3, sirka: 3.2, dlzkaTyp: 'standard', typ: 'ciry', farba: '7016' },
+  { meno: 'Nosko', model: 'Jednokolajove', hruby: true, seg: 4, sirka: 4.1, dlzkaTyp: 'standard', typ: 'ciry', farba: '7016' },
+  { meno: 'sobota', model: 'Jednokolajove', hruby: true, seg: 3, sirka: 3.3, dlzkaTyp: 'predlzene', typ: 'ciry', farba: '7045' },
+  { meno: 'Andel', model: 'Klasik Lux', hruby: false, seg: 3, sirka: 3.3, dlzkaTyp: 'standard', typ: 'ciry', farba: '9007' },
+  { meno: 'Pažitka', model: 'Jednokolajove', hruby: true, seg: 3, sirka: 3, dlzkaTyp: 'standard', typ: 'ciry', farba: '7016' },
+  { meno: 'Goga(BOBOK)', model: 'Klasik', hruby: false, seg: 3, sirka: 3.2, dlzkaTyp: 'standard', typ: 'dutinkovy', farba: '8017' },
+  { meno: 'Harasníková', model: 'Jednokolajove', hruby: true, seg: 4, sirka: 3.3, dlzkaTyp: 'predlzene', typ: 'ciry', farba: '7016' },
+  { meno: 'Neckar', model: 'Elegance', hruby: false, seg: 3, sirka: 3, dlzkaTyp: 'standard', typ: 'ciry', farba: '8019' },
+  { meno: 'hudec', model: 'Praktik Plus', hruby: true, seg: 4, sirka: 6, dlzkaTyp: 'standard', typ: 'ciry', farba: '8017' },
+  { meno: 'maťko', model: 'Komfort', hruby: false, seg: 4, sirka: 4.6, dlzkaTyp: 'predlzene', typ: 'ciry', farba: '7016' },
+  { meno: 'kormendy', manual: true, typ: 'ciry', farba: '7016', mRm: '2,1', mPc: 2 },
+  { meno: 'kormendy', manual: true, typ: 'ciry', farba: '7016', mRm: '1,25', mPc: 4 },
+  { meno: 'jančo', manual: true, typ: 'ciry', farba: '1019', mRm: '2,1', mPc: 3 },
+  { meno: 'poluch', manual: true, typ: 'ciry', farba: '7016', mRm: '2,1', mPc: 4 },
+  { meno: 'infinity 3', manual: true, typ: 'ciry', farba: '7016', mRm: '2,1', mPc: 3 },
+  { meno: 'Goga', model: 'Klasik Lux', hruby: false, seg: 3, sirka: 3.1, dlzkaTyp: 'standard', typ: 'ciry', farba: '7016' },
+  { meno: 'remiš', manual: true, typ: 'ciry', farba: '7016', mRm: '1,25', mPc: 12 },
+  { meno: 'Fakla', model: 'Jednokolajove', hruby: true, seg: 3, sirka: 3.4, dlzkaTyp: 'predlzene', typ: 'ciry', farba: '7016' },
+  { meno: 'Tothova', model: 'Klasik Lux', hruby: false, seg: 3, sirka: 3, dlzkaTyp: 'predlzene', typ: 'ciry', farba: '1013' },
+  { meno: 'Hula', manual: true, typ: 'dutinkovy', farba: '7044', mRm: '', mPc: '' },
+  { meno: 'Bittera', model: 'Klasik Lux', hruby: false, seg: 3, sirka: 3.2, dlzkaTyp: 'predlzene', typ: 'dutinkovy', farba: '1013' },
+  { meno: 'skaličan', model: 'Klasik Lux', hruby: false, seg: 2, sirka: 4, dlzkaTyp: 'standard', typ: 'ciry', farba: '7016' },
+  { meno: 'Krchová', model: 'Klasik Lux', hruby: false, seg: 3, sirka: 3.1, dlzkaTyp: 'standard', typ: 'ciry', farba: '1019' },
+  { meno: 'Tomašovič', model: 'Klasik Lux', hruby: false, seg: 2, sirka: 3.2, dlzkaTyp: 'standard', typ: 'ciry', farba: '7016' },
+  { meno: 'Kukučka', model: 'Elegance', hruby: false, seg: 3, sirka: 4, dlzkaTyp: 'predlzene', typ: 'ciry', farba: '8025M' },
+  { meno: 'Liška', model: 'Klasik Lux', hruby: false, seg: 3, sirka: 3.6, dlzkaTyp: 'standard', typ: 'ciry', farba: '7016' },
+  { meno: 'Karaba', model: 'Klasik', hruby: false, seg: 2, sirka: 2.3, dlzkaTyp: 'standard', typ: 'ciry', farba: '8003' },
+  { meno: 'Karaba 2', manual: true, typ: 'dutinkovy', farba: '', mRm: '2,1', mPc: 2 },
+  { meno: 'Kóňa', manual: true, typ: 'ciry', farba: '7016', mRm: '1,25', mPc: 8 },
+  { meno: 'Rehak', manual: true, typ: 'ciry', farba: '7016M', mH: 11, mO: 5, mSp: '4x6', mDl: '5,2', mRm: '2,1', mPc: 4 },
+  { meno: 'Rehak 2', manual: true, typ: 'ciry', farba: '', mRm: '1,25', mPc: 4 },
+  { meno: 'Neupauer', model: 'Elegance Mini', hruby: false, seg: 3, sirka: 3, dlzkaTyp: 'standard', typ: 'dutinkovy', farba: '7016' },
+  { meno: 'Bedecsova', model: 'Jednokolajove', hruby: true, seg: 3, sirka: 3.2, dlzkaTyp: 'predlzene', typ: 'ciry', farba: '7016' },
+  { meno: 'Bučko', model: 'Elegance Mini', hruby: false, seg: 3, sirka: 4.3, dlzkaTyp: 'predlzene', typ: 'ciry', farba: '7016' },
+  { meno: 'čambor', manual: true, typ: 'ciry', farba: '7016', mRm: '2,1', mPc: 3 },
+  { meno: 'Kočkovská', model: 'Jednokolajove', hruby: true, seg: 4, sirka: 4.6, dlzkaTyp: 'predlzene', typ: 'ciry', farba: '7016' }
+];
+
+
+/* ---------- 15b. ŤAHANIE ZA PLOCHU (horizontálny posun) ---------- */
+function attachDragScroll(el, ignoreSel) {
+  if (!el) return;
+  var down = false, startX = 0, startY = 0, startL = 0, startT = 0, moved = false;
+  el.addEventListener('mousedown', function (e) {
+    if (e.button !== 0) return;
+    if (e.target.closest('input,select,button,textarea,option,a,label')) return;
+    if (ignoreSel && e.target.closest(ignoreSel)) return;
+    down = true; moved = false;
+    startX = e.pageX; startY = e.pageY;
+    startL = el.scrollLeft; startT = el.scrollTop;
+    el.classList.add('grabbing');
+  });
+  document.addEventListener('mousemove', function (e) {
+    if (!down) return;
+    var dx = e.pageX - startX, dy = e.pageY - startY;
+    if (!moved && Math.abs(dx) + Math.abs(dy) < 4) return;
+    moved = true;
+    e.preventDefault();
+    el.scrollLeft = startL - dx;
+    el.scrollTop = startT - dy;
+  });
+  document.addEventListener('mouseup', function () {
+    if (!down) return;
+    down = false;
+    el.classList.remove('grabbing');
+  });
+  /* koliesko myši = posun doľava/doprava, keď je čo posúvať */
+  el.addEventListener('wheel', function (e) {
+    if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    if (el.scrollWidth <= el.clientWidth) return;
+    if (!e.altKey) return;
+    e.preventDefault();
+    el.scrollLeft += e.deltaY;
+  }, { passive: false });
+}
+
+/* ---------- 15c. SKLAD ---------- */
+var STOCK_KEY = 'oceanik_sklad_v1';
+var stock = {};
+var stockMode = 'left';
+var stockFlat = [];
+
+var StockStore = {
+  load: function () {
+    try { return JSON.parse(localStorage.getItem(STOCK_KEY)) || {}; } catch (e) { return {}; }
+    // API verzia:  const r = await fetch('/api/stock'); return r.json();
+  },
+  save: function (obj) {
+    localStorage.setItem(STOCK_KEY, JSON.stringify(obj));
+    // API verzia:  await fetch('/api/stock', {method:'PUT', body:JSON.stringify(obj)});
+  }
+};
+
+function setStockMode(m) {
+  stockMode = m;
+  document.querySelectorAll('.mode[data-sm]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-sm') === m); });
+  renderStock();
+}
+function clearStock() {
+  if (!confirm('Vynulovať všetky zadané zásoby?')) return;
+  stock = {}; StockStore.save(stock); renderStock();
+}
+function updStock(i, val) {
+  var it = stockFlat[i];
+  if (!it) return;
+  var n = val === '' ? '' : (parseInt(val, 10) || 0);
+  stock[it.k] = n;
+  StockStore.save(stock);
+  paintDiff(i);
+  renderShortlist();
+}
+function diffOf(it) {
+  var have = stock[it.k];
+  if (have === '' || have === undefined || have === null) return null;
+  return have - it.need;
+}
+function paintDiff(i) {
+  var it = stockFlat[i];
+  var el = document.getElementById('sd-' + i);
+  if (!el || !it) return;
+  var d = diffOf(it);
+  if (d === null) { el.className = 'stock-d d-zero'; el.textContent = '—'; return; }
+  el.className = 'stock-d ' + (d < 0 ? 'd-bad' : d === 0 ? 'd-zero' : 'd-ok');
+  el.textContent = d < 0 ? d : '+' + d;
+}
+
+function buildStockItems() {
+  var m = stockMode === 'plan' ? 'plan' : 'left';
+  var alu = aggregate(subset(ST_ALU, m));
+  var pol = aggregate(subset(ST_POLY, m));
+  var L = ['5,2', '5,7', '6'];
+  function n(by, byH, l) { return (by[l] || 0) - (byH[l] || 0); }
+
+  return [
+    { g: 'Hliník — H profil', c: 'var(--amber)', note: 'normálny', items: L.map(function (l) {
+        return { k: 'Hn' + l, l: 'H ' + l + ' m', need: n(alu.H_by, alu.Hh_by, l) }; }) },
+    { g: 'Hliník — O profil', c: 'var(--purple)', note: 'normálny', items: L.map(function (l) {
+        return { k: 'On' + l, l: 'O ' + l + ' m', need: n(alu.O_by, alu.Oh_by, l) }; }) },
+    { g: 'Hliník — Hrubý profil', c: 'var(--orange)', note: 'hrubý', items:
+        L.map(function (l) { return { k: 'Hh' + l, l: 'H hrubý ' + l + ' m', need: alu.Hh_by[l] || 0 }; })
+        .concat(L.map(function (l) { return { k: 'Oh' + l, l: 'O hrubý ' + l + ' m', need: alu.Oh_by[l] || 0 }; })) },
+    { g: 'Spodky', c: 'var(--teal)', note: 'normálne + hrubé', items: [
+        { k: 'Sp6', l: 'Spodok ×6 — normálny', need: alu.spodok6 - alu.spodok6h },
+        { k: 'Sp5', l: 'Spodok ×5 — normálny', need: alu.spodok5 - alu.spodok5h },
+        { k: 'Sp6h', l: 'Spodok ×6 — hrubý', need: alu.spodok6h },
+        { k: 'Sp5h', l: 'Spodok ×5 — hrubý', need: alu.spodok5h }] },
+    { g: 'Polykarbonát — Dutinkový', c: 'var(--dut)', note: 'tabule', items: [
+        { k: 'Pd21', l: 'Dutinkový 2,1 m', need: pol.poly.dutinkovy['2,1'] },
+        { k: 'Pd125', l: 'Dutinkový 1,25 m', need: pol.poly.dutinkovy['1,25'] }] },
+    { g: 'Polykarbonát — Číry', c: 'var(--ciry)', note: 'tabule', items: [
+        { k: 'Pc21', l: 'Číry 2,1 m', need: pol.poly.ciry['2,1'] },
+        { k: 'Pc125', l: 'Číry 1,25 m', need: pol.poly.ciry['1,25'] }] }
+  ];
+}
+
+function renderStock() {
+  var host = document.getElementById('stockContent');
+  if (!host) return;
+  var groups = buildStockItems();
+  stockFlat = [];
+  groups.forEach(function (g) { g.items.forEach(function (it) { it._i = stockFlat.length; stockFlat.push(it); }); });
+
+  var html = '<div id="shortlist"></div><div class="stock-grid">';
+  groups.forEach(function (g) {
+    html += '<div class="stock-card" style="--c:' + g.c + '">' +
+      '<div class="stock-hdr"><b>' + g.g + '</b><span class="stock-sub">' + g.note + '</span></div>' +
+      '<div class="stock-row head"><span>Položka</span><span>Treba</span><span>Mám</span><span>Rozdiel</span></div>';
+    g.items.forEach(function (it) {
+      var have = stock[it.k];
+      html += '<div class="stock-row">' +
+        '<span class="stock-l">' + it.l + '</span>' +
+        '<span class="stock-need">' + it.need + '</span>' +
+        '<input class="stock-in" type="number" min="0" value="' + (have === undefined || have === null ? '' : have) + '" placeholder="—" oninput="updStock(' + it._i + ',this.value)">' +
+        '<span class="stock-d d-zero" id="sd-' + it._i + '">—</span>' +
+        '</div>';
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  host.innerHTML = html;
+  stockFlat.forEach(function (_, i) { paintDiff(i); });
+  renderShortlist();
+}
+
+function renderShortlist() {
+  var host = document.getElementById('shortlist');
+  if (!host) return;
+  var missing = stockFlat.filter(function (it) { var d = diffOf(it); return d !== null && d < 0; });
+  if (!missing.length) { host.innerHTML = ''; return; }
+  var body = missing.map(function (it) {
+    return '<div class="short-item"><span>' + it.l + '</span><b>chýba ' + Math.abs(diffOf(it)) + ' ks</b></div>';
+  }).join('');
+  host.innerHTML = '<div class="shortlist"><h3>Treba doobjednať — ' + missing.length + ' položiek</h3>' + body + '</div>';
+}
+
+/* ---------- 15z. MESTÁ SR ---------- */
+var SK_MESTA = {
+  'Bratislava': [48.148, 17.107], 'Košice': [48.716, 21.261], 'Prešov': [48.998, 21.239],
+  'Žilina': [49.223, 18.740], 'Nitra': [48.309, 18.087], 'Banská Bystrica': [48.736, 19.146],
+  'Trnava': [48.377, 17.588], 'Trenčín': [48.894, 18.044], 'Martin': [49.065, 18.921],
+  'Poprad': [49.056, 20.298], 'Prievidza': [48.774, 18.627], 'Zvolen': [48.577, 19.126],
+  'Považská Bystrica': [49.121, 18.424], 'Nové Zámky': [47.986, 18.162], 'Michalovce': [48.755, 21.918],
+  'Spišská Nová Ves': [48.944, 20.567], 'Komárno': [47.762, 18.129], 'Levice': [48.216, 18.607],
+  'Humenné': [48.936, 21.911], 'Bardejov': [49.293, 21.276], 'Liptovský Mikuláš': [49.083, 19.611],
+  'Piešťany': [48.594, 17.827], 'Ružomberok': [49.078, 19.308], 'Topoľčany': [48.557, 18.176],
+  'Trebišov': [48.629, 21.719], 'Čadca': [49.437, 18.789], 'Dubnica nad Váhom': [48.960, 18.169],
+  'Rimavská Sobota': [48.383, 20.022], 'Partizánske': [48.627, 18.375], 'Vranov nad Topľou': [48.887, 21.684],
+  'Šaľa': [48.152, 17.881], 'Hlohovec': [48.428, 17.804], 'Senica': [48.680, 17.366],
+  'Sereď': [48.288, 17.735], 'Brezno': [48.804, 19.639], 'Nové Mesto nad Váhom': [48.756, 17.831],
+  'Snina': [48.988, 22.153], 'Dunajská Streda': [47.993, 17.612], 'Púchov': [49.124, 18.328],
+  'Rožňava': [48.660, 20.532], 'Malacky': [48.437, 17.021], 'Bánovce nad Bebravou': [48.721, 18.257],
+  'Handlová': [48.727, 18.760], 'Kežmarok': [49.135, 20.428], 'Detva': [48.560, 19.418],
+  'Pezinok': [48.288, 17.267], 'Lučenec': [48.332, 19.667], 'Skalica': [48.845, 17.226],
+  'Sabinov': [49.103, 21.099], 'Stará Ľubovňa': [49.301, 20.688], 'Revúca': [48.683, 20.113],
+  'Levoča': [49.024, 20.589], 'Krompachy': [48.913, 20.874], 'Šamorín': [48.029, 17.310],
+  'Holíč': [48.808, 17.161], 'Vráble': [48.244, 18.312], 'Zlaté Moravce': [48.385, 18.399],
+  'Svidník': [49.306, 21.573], 'Modra': [48.334, 17.309], 'Stupava': [48.276, 17.032],
+  'Senec': [48.219, 17.400], 'Galanta': [48.190, 17.727], 'Šurany': [48.086, 18.184],
+  'Štúrovo': [47.795, 18.717], 'Kolárovo': [47.923, 17.986], 'Hurbanovo': [47.869, 18.194],
+  'Nová Baňa': [48.425, 18.640], 'Banská Štiavnica': [48.458, 18.897], 'Žiar nad Hronom': [48.590, 18.851],
+  'Kremnica': [48.705, 18.917], 'Krupina': [48.356, 19.065], 'Veľký Krtíš': [48.212, 19.348],
+  'Fiľakovo': [48.269, 19.825], 'Tornaľa': [48.421, 20.324], 'Dolný Kubín': [49.209, 19.297],
+  'Námestovo': [49.408, 19.481], 'Tvrdošín': [49.336, 19.556], 'Trstená': [49.362, 19.610],
+  'Turčianske Teplice': [48.862, 18.861], 'Bytča': [49.223, 18.558], 'Kysucké Nové Mesto': [49.302, 18.786],
+  'Rajec': [49.086, 18.640], 'Vrútky': [49.111, 18.916], 'Liptovský Hrádok': [49.038, 19.723],
+  'Ilava': [48.997, 18.235], 'Nemšová': [48.966, 18.118], 'Stará Turá': [48.777, 17.694],
+  'Myjava': [48.752, 17.567], 'Vrbové': [48.617, 17.723], 'Leopoldov': [48.446, 17.766],
+  'Gbely': [48.719, 17.121], 'Šaštín-Stráže': [48.640, 17.146], 'Veľký Meder': [47.859, 17.767],
+  'Gabčíkovo': [47.891, 17.578], 'Nesvady': [47.933, 18.121], 'Tlmače': [48.288, 18.531],
+  'Želiezovce': [48.052, 18.653], 'Svätý Jur': [48.253, 17.213], 'Ivanka pri Dunaji': [48.187, 17.267],
+  'Bernolákovo': [48.196, 17.310], 'Dunajská Lužná': [48.076, 17.278], 'Rovinka': [48.096, 17.245],
+  'Chorvátsky Grob': [48.244, 17.276], 'Marianka': [48.253, 17.048], 'Sväty Jur': [48.253, 17.213],
+  'Sečovce': [48.699, 21.660], 'Strážske': [48.867, 21.836], 'Veľké Kapušany': [48.545, 22.084],
+  'Sobrance': [48.745, 22.181], 'Kráľovský Chlmec': [48.421, 21.977], 'Moldava nad Bodvou': [48.610, 20.998],
+  'Gelnica': [48.855, 20.936], 'Medzilaborce': [49.271, 21.902], 'Stropkov': [49.203, 21.652],
+  'Giraltovce': [49.117, 21.514], 'Lipany': [49.152, 20.964], 'Vysoké Tatry': [49.137, 20.219],
+  'Svit': [49.061, 20.194], 'Spišská Belá': [49.187, 20.463], 'Podolínec': [49.258, 20.535],
+  'Ľubica': [49.126, 20.457], 'Poltár': [48.428, 19.795], 'Hriňová': [48.577, 19.501],
+  'Banská Belá': [48.474, 18.949], 'Sliač': [48.617, 19.152], 'Nová Dubnica': [48.937, 18.147],
+  'Hlinné': [48.898, 21.669], 'Šaštín': [48.640, 17.146], 'Rajecké Teplice': [49.128, 18.643],
+  'Turzovka': [49.406, 18.622], 'Krásno nad Kysucou': [49.395, 18.838], 'Belá': [49.201, 18.937],
+  'Terchová': [49.256, 19.023], 'Zákamenné': [49.373, 19.291], 'Oravský Podzámok': [49.259, 19.355],
+  'Hnúšťa': [48.578, 19.955], 'Jelšava': [48.629, 20.238], 'Dobšiná': [48.818, 20.371],
+  'Nováky': [48.708, 18.535], 'Bojnice': [48.780, 18.586], 'Lehota pod Vtáčnikom': [48.699, 18.594],
+  'Chynorany': [48.615, 18.230], 'Veľké Uherce': [48.652, 18.437], 'Beluša': [49.062, 18.318],
+  'Lednické Rovne': [49.093, 18.284], 'Bošany': [48.628, 18.245], 'Zlaté Klasy': [48.106, 17.436],
+  'Most pri Bratislave': [48.129, 17.276], 'Malinovo': [48.144, 17.288], 'Miloslavov': [48.106, 17.318],
+  'Limbach': [48.302, 17.245], 'Rača': [48.202, 17.156], 'Devínska Nová Ves': [48.211, 16.988],
+  'Záhorská Bystrica': [48.226, 17.037], 'Vajnory': [48.209, 17.204], 'Podunajské Biskupice': [48.128, 17.192],
+  'Nitrianske Pravno': [48.879, 18.647], 'Sučany': [49.101, 18.976], 'Kláštor pod Znievom': [48.937, 18.821],
+  'Tisovec': [48.680, 19.943], '醊': [0, 0]
+};
+delete SK_MESTA['醊'];
+
+/* ---------- 15d. GEOKÓDOVANIE MIEST ---------- */
+var GEO_KEY = 'oceanik_geo_v1';
+var geoCache = {};
+try { geoCache = JSON.parse(localStorage.getItem(GEO_KEY)) || {}; } catch (e) { geoCache = {}; }
+
+function normMesto(s) {
+  return String(s || '').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+var SK_INDEX = {};
+Object.keys(SK_MESTA).forEach(function (n) { SK_INDEX[normMesto(n)] = SK_MESTA[n]; });
+
+/* vráti [lat,lon] okamžite, alebo null (a spustí dohľadanie online) */
+function geo(mesto) {
+  var k = normMesto(mesto);
+  if (!k) return null;
+  if (SK_INDEX[k]) return SK_INDEX[k];
+  if (geoCache[k]) return geoCache[k];
+  if (geoCache[k] === null) return null;      // už sme hľadali, nenašlo sa
+  if (k.length >= 4) queueGeo(k, mesto);      // krátke útržky pri písaní nehľadáme
+  return null;
+}
+
+var geoQueue = [], geoBusy = false;
+function queueGeo(k, orig) {
+  if (geoQueue.some(function (q) { return q.k === k; })) return;
+  geoQueue.push({ k: k, orig: orig });
+  runGeo();
+}
+function runGeo() {
+  if (geoBusy || !geoQueue.length) return;
+  geoBusy = true;
+  var job = geoQueue.shift();
+  var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=sk&q=' + encodeURIComponent(job.orig);
+  fetch(url, { headers: { 'Accept': 'application/json' } })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      geoCache[job.k] = (d && d.length) ? [parseFloat(d[0].lat), parseFloat(d[0].lon)] : null;
+      localStorage.setItem(GEO_KEY, JSON.stringify(geoCache));
+      renderMap();
+    })
+    .catch(function () { geoCache[job.k] = null; })
+    .then(function () {
+      setTimeout(function () { geoBusy = false; runGeo(); }, 1100); // Nominatim: max 1 req/s
+    });
+}
+
+/* vzdušná vzdialenosť v km */
+function distKm(a, b) {
+  var R = 6371, t = Math.PI / 180;
+  var dLat = (b[0] - a[0]) * t, dLon = (b[1] - a[1]) * t;
+  var x = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(a[0] * t) * Math.cos(b[0] * t) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return Math.round(2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+}
+
+/* ---------- 15e. OPRAVY ---------- */
+var OPRAVY_KEY = 'oceanik_opravy_v1';
+var opravy = [];
+var oid = 1;
+
+var OpravaStore = {
+  load: function () { try { return JSON.parse(localStorage.getItem(OPRAVY_KEY)) || []; } catch (e) { return []; } },
+  save: function (list) { localStorage.setItem(OPRAVY_KEY, JSON.stringify(list)); }
+  // API verzia: fetch('/api/opravy', ...)
+};
+function saveOpravy() { OpravaStore.save(opravy); }
+
+var PRIORITY = [
+  { k: 'bezna', l: 'Bežná', c: 'var(--text2)' },
+  { k: 'stredna', l: 'Stredná', c: 'var(--amber)' },
+  { k: 'urgent', l: 'Urgentná', c: 'var(--red)' }
+];
+
+function addOprava(d, skip) {
+  d = d || {};
+  var id = d.id || oid++;
+  if (id >= oid) oid = id + 1;
+  opravy.push({
+    id: id,
+    meno: d.meno || '',
+    mesto: d.mesto || '',
+    popis: d.popis || '',
+    prio: d.prio || 'bezna',
+    hotovo: !!d.hotovo,
+    datum: d.datum || today()
+  });
+  if (!skip) { renderOpravy(); renderMap(); saveOpravy(); }
+}
+function updOprava(id, f, v) {
+  var o = opravy.filter(function (x) { return x.id === id; })[0];
+  if (!o) return;
+  o[f] = (f === 'hotovo') ? !!v : v;
+  saveOpravy();
+  if (f === 'hotovo' || f === 'prio') { renderOpravy(); renderMap(); }
+  else if (f === 'mesto') mapSoon();
+  else renderOpravyCount();
+}
+function removeOprava(id) {
+  var o = opravy.filter(function (x) { return x.id === id; })[0];
+  if (o && (o.meno || o.popis) && !confirm('Zmazať opravu „' + (o.meno || o.mesto) + '“?')) return;
+  opravy = opravy.filter(function (x) { return x.id !== id; });
+  renderOpravy(); renderMap(); saveOpravy();
+}
+
+function renderOpravyCount() {
+  var open = opravy.filter(function (o) { return !o.hotovo; }).length;
+  var el = document.getElementById('opCount');
+  if (el) el.textContent = open + ' otvorených · ' + opravy.length + ' spolu';
+  var b = document.getElementById('opBadge');
+  if (b) { b.textContent = open || ''; b.style.display = open ? '' : 'none'; }
+}
+
+function renderOpravy() {
+  var tb = document.getElementById('opBody');
+  if (!tb) return;
+  var showDone = document.getElementById('opDone').checked;
+  var list = opravy.filter(function (o) { return showDone || !o.hotovo; });
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="7" class="empty">Žiadne opravy. Pridaj prvú tlačidlom nižšie.</td></tr>';
+    renderOpravyCount(); return;
+  }
+  tb.innerHTML = list.map(function (o, i) {
+    var near = nearbyOrders(o);
+    var prioSel = PRIORITY.map(function (p) {
+      return '<option value="' + p.k + '"' + (o.prio === p.k ? ' selected' : '') + '>' + p.l + '</option>';
+    }).join('');
+    var pc = (PRIORITY.filter(function (p) { return p.k === o.prio; })[0] || PRIORITY[0]).c;
+    return '<tr' + (o.hotovo ? ' style="opacity:.45"' : '') + '>' +
+      '<td><button class="btn-del" onclick="removeOprava(' + o.id + ')">✕</button></td>' +
+      '<td class="rnum">' + (i + 1) + '</td>' +
+      '<td><input type="text" value="' + esc(o.meno) + '" placeholder="Meno zákazníka" style="min-width:130px" oninput="updOprava(' + o.id + ',\'meno\',this.value)"></td>' +
+      '<td><input type="text" value="' + esc(o.mesto) + '" placeholder="Mesto" list="dl-mesta" style="min-width:120px" oninput="updOprava(' + o.id + ',\'mesto\',this.value)"></td>' +
+      '<td><input type="text" value="' + esc(o.popis) + '" placeholder="Čo treba opraviť…" style="min-width:280px" oninput="updOprava(' + o.id + ',\'popis\',this.value)"></td>' +
+      '<td><select style="min-width:104px;color:' + pc + ';font-weight:600" onchange="updOprava(' + o.id + ',\'prio\',this.value)">' + prioSel + '</select></td>' +
+      '<td style="text-align:center">' +
+        '<label style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text2);cursor:pointer">' +
+        '<input type="checkbox"' + (o.hotovo ? ' checked' : '') + ' style="width:15px;height:15px;accent-color:var(--green);cursor:pointer" onchange="updOprava(' + o.id + ',\'hotovo\',this.checked)"> hotovo</label>' +
+        (near.length ? '<div style="margin-top:4px;font-size:10px;color:var(--s5)">📍 ' + near.length + ' zákazk' + (near.length === 1 ? 'a' : near.length < 5 ? 'y' : 'iek') + ' v okolí</div>' : '') +
+      '</td></tr>';
+  }).join('');
+  renderOpravyCount();
+}
+
+/* zákazky pred montážou v okolí danej opravy */
+var RADIUS = 35;
+function nearbyOrders(o) {
+  var p = geo(o.mesto);
+  if (!p || o.hotovo) return [];
+  var out = [];
+  rows.forEach(function (r) {
+    if (r.stav !== 4 || !r.mesto) return;      // len hotové, čakajúce na montáž
+    var q = geo(r.mesto);
+    if (q && distKm(p, q) <= RADIUS) out.push({ r: r, km: distKm(p, q), kind: 'bazen' });
+  });
+  terasy.forEach(function (t) {
+    if (t.stav >= 5 || !t.mesto) return;
+    var q = geo(t.mesto);
+    if (q && distKm(p, q) <= RADIUS) out.push({ r: t, km: distKm(p, q), kind: 'terasa' });
+  });
+  return out.sort(function (a, b) { return a.km - b.km; });
+}
+
+var sumTimer = null;
+function sumSoon() {
+  clearTimeout(sumTimer);
+  sumTimer = setTimeout(renderSummary, 500);
+}
+
+var mapTimer = null;
+function mapSoon() {
+  clearTimeout(mapTimer);
+  mapTimer = setTimeout(function () { renderMap(); renderOpravyCount(); }, 600);
+}
+
+/* ---------- 15f. MAPA ---------- */
+var map = null, layerOpravy = null, layerZak = null, layerTer = null, mapReady = false;
+
+function initMap() {
+  if (map || typeof L === 'undefined') return;
+  map = L.map('mapBox', { scrollWheelZoom: true, zoomControl: true }).setView([48.72, 19.45], 7.4);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap · © CARTO', maxZoom: 18, subdomains: 'abcd'
+  }).addTo(map);
+  layerZak = L.layerGroup().addTo(map);
+  layerTer = L.layerGroup().addTo(map);
+  layerOpravy = L.layerGroup().addTo(map);
+  mapReady = true;
+  renderMap();
+}
+
+function renderMap() {
+  if (!mapReady || !map) return;
+  layerOpravy.clearLayers();
+  layerZak.clearLayers();
+  layerTer.clearLayers();
+  var showZ = document.getElementById('mapZak').checked;
+  var showO = document.getElementById('mapOpr').checked;
+  var showDone = document.getElementById('mapDone').checked;
+  var unknown = [], bounds = [];
+
+  if (showZ) {
+    rows.forEach(function (r) {
+      if (!r.mesto) return;
+      if (r.stav !== 4 && !(showDone && r.stav === 5)) return;   // len HOTOVÉ, čakajúce na montáž
+      var p = geo(r.mesto);
+      if (!p) { unknown.push(r.mesto); return; }
+      var col = r.stav === 5 ? '#3b82f6' : '#10b981';
+      var jit = jitter(p, r.id);
+      bounds.push(jit);
+      L.circleMarker(jit, { radius: 8, color: col, weight: 2, fillColor: col, fillOpacity: .55 })
+        .bindPopup('<b>' + esc(r.meno || 'bez mena') + '</b><br>' + esc(r.mesto) +
+          '<br><span style="color:' + col + '">Zastrešenie — ' + STAGES[r.stav].label + '</span>' +
+          (r.model ? '<br>' + esc(MODELS_DISPLAY[r.model] || r.model) : '') +
+          (r.farba ? ' · RAL ' + esc(r.farba) : ''))
+        .addTo(layerZak);
+    });
+  }
+
+  if (document.getElementById('mapTer').checked) {
+    terasy.forEach(function (t) {
+      if (!t.mesto) return;
+      if (!showDone && t.stav >= 5) return;
+      var p = geo(t.mesto);
+      if (!p) { unknown.push(t.mesto); return; }
+      var tt = terasaTyp(t.typ);
+      var jit = jitter(p, t.id + 9000);
+      bounds.push(jit);
+      L.marker(jit, { icon: squareIcon(tt.c) })
+        .bindPopup('<b>' + esc(t.meno || 'Terasa') + '</b><br>' + esc(t.mesto) +
+          '<br><span style="color:' + tt.c + '">' + tt.l + '</span>' +
+          (t.farba ? ' · RAL ' + esc(t.farba) : '') +
+          '<br>' + STAGES[t.stav].label)
+        .addTo(layerTer);
+    });
+  }
+
+  if (showO) {
+    opravy.forEach(function (o) {
+      if (!o.mesto) return;
+      if (!showDone && o.hotovo) return;
+      var p = geo(o.mesto);
+      if (!p) { unknown.push(o.mesto); return; }
+      var col = o.hotovo ? '#475569' : (o.prio === 'urgent' ? '#ef4444' : o.prio === 'stredna' ? '#f59e0b' : '#e879f9');
+      var jit = jitter(p, o.id + 5000);
+      bounds.push(jit);
+      var near = nearbyOrders(o);
+      var nearTxt = near.length
+        ? '<br><span style="color:#3b82f6">V okolí ' + RADIUS + ' km: ' +
+          near.slice(0, 4).map(function (n) { return esc(n.r.meno || n.r.mesto) + ' (' + n.km + ' km)'; }).join(', ') + '</span>'
+        : '';
+      L.marker(jit, { icon: wrenchIcon(col) })
+        .bindPopup('<b>🔧 ' + esc(o.meno || 'Oprava') + '</b><br>' + esc(o.mesto) +
+          (o.popis ? '<br>' + esc(o.popis) : '') + nearTxt)
+        .addTo(layerOpravy);
+    });
+  }
+
+  var un = unknown.filter(function (v, i, a) { return a.indexOf(v) === i; });
+  var w = document.getElementById('mapWarn');
+  w.innerHTML = un.length
+    ? '<span style="color:var(--amber)">Hľadám na mape: ' + un.map(esc).join(', ') + ' — chvíľu to potrvá, alebo mesto nie je rozpoznané.</span>'
+    : '';
+  renderNearPanel();
+}
+
+function jitter(p, seed) {
+  var a = (seed * 2.39996) % (Math.PI * 2);
+  var d = 0.012 + (seed % 5) * 0.004;
+  return [p[0] + Math.sin(a) * d * 0.6, p[1] + Math.cos(a) * d];
+}
+function squareIcon(color) {
+  return L.divIcon({
+    className: '', iconSize: [16, 16], iconAnchor: [8, 8],
+    html: '<div style="width:14px;height:14px;border-radius:3px;background:' + color +
+      ';border:2px solid #0f1117;box-shadow:0 2px 5px rgba(0,0,0,.6)"></div>'
+  });
+}
+function wrenchIcon(color) {
+  return L.divIcon({
+    className: '', iconSize: [22, 22], iconAnchor: [11, 11],
+    html: '<div style="width:22px;height:22px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);background:' + color +
+      ';border:2px solid #0f1117;box-shadow:0 2px 6px rgba(0,0,0,.6)"></div>'
+  });
+}
+
+function renderNearPanel() {
+  var host = document.getElementById('nearPanel');
+  if (!host) return;
+  var pairs = [];
+  opravy.forEach(function (o) {
+    if (o.hotovo || !o.mesto) return;
+    nearbyOrders(o).forEach(function (n) { pairs.push({ o: o, r: n.r, km: n.km }); });
+  });
+  if (!pairs.length) {
+    host.innerHTML = '<div class="empty">Žiadna oprava sa nekryje s montážou v okolí. Zobrazujú sa zastrešenia v stave „Hotové“ a rozpracované terasy — obom treba doplniť mesto.</div>';
+    return;
+  }
+  pairs.sort(function (a, b) { return a.km - b.km; });
+  var byO = {};
+  pairs.forEach(function (p) { (byO[p.o.id] = byO[p.o.id] || []).push(p); });
+  var html = '';
+  Object.keys(byO).forEach(function (k) {
+    var list = byO[k], o = list[0].o;
+    html += '<div class="card" style="margin-bottom:10px"><div class="card-hdr" style="border-left:3px solid #e879f9">' +
+      '<span style="font-size:12px;font-weight:700">🔧 ' + esc(o.meno || 'Oprava') + ' — ' + esc(o.mesto) + '</span>' +
+      '<span style="margin-left:auto;font-size:10px;color:var(--text3)">' + esc(o.popis || '') + '</span></div><div style="padding:6px 12px 9px">';
+    list.forEach(function (p) {
+      var c = STAGES[p.r.stav].color;
+      html += '<div style="display:flex;align-items:center;gap:9px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">' +
+        '<span style="width:7px;height:7px;border-radius:50%;background:' + c + ';flex-shrink:0"></span>' +
+        '<span style="font-weight:500">' + esc(p.r.meno || 'bez mena') + '</span>' +
+        '<span style="color:var(--text3)">' + esc(p.r.mesto) + '</span>' +
+        '<span style="margin-left:auto;font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--text2)">' + p.km + ' km</span>' +
+        '<span class="tag" style="background:color-mix(in srgb,' + c + ' 18%, transparent);color:' + c + '">' + STAGES[p.r.stav].label + '</span>' +
+        '<span class="tag" style="background:rgba(148,163,184,.12);color:var(--text3)">' + (p.kind === 'terasa' ? terasaTyp(p.r.typ).l : 'Zastrešenie') + '</span>' +
+        '</div>';
+    });
+    html += '</div></div>';
+  });
+  host.innerHTML = html;
+}
+
+/* datalist miest pre napovedanie */
+function renderMestaDatalist() {
+  var dl = document.getElementById('dl-mesta');
+  if (!dl) return;
+  dl.innerHTML = Object.keys(SK_MESTA).sort().map(function (m) { return '<option value="' + m + '">'; }).join('');
+}
+
+/* ---------- 15g. TERASY ---------- */
+var TERASY_KEY = 'oceanik_terasy_v1';
+var terasy = [];
+var tid = 1;
+
+var TERASA_TYPY = [
+  { k: 'zimna', l: 'Zimná záhrada', c: '#22d3ee' },
+  { k: 'okna', l: 'Okná', c: '#a3e635' },
+  { k: 'pergola', l: 'Pergola', c: '#fb923c' },
+  { k: 'pristresok', l: 'Prístrešok', c: '#f472b6' }
+];
+function terasaTyp(k) {
+  for (var i = 0; i < TERASA_TYPY.length; i++) if (TERASA_TYPY[i].k === k) return TERASA_TYPY[i];
+  return { k: '', l: '—', c: 'var(--text3)' };
+}
+
+var TerasaStore = {
+  load: function () { try { return JSON.parse(localStorage.getItem(TERASY_KEY)) || []; } catch (e) { return []; } },
+  save: function (list) { localStorage.setItem(TERASY_KEY, JSON.stringify(list)); }
+  // API verzia: fetch('/api/terasy', ...)
+};
+function saveTerasy() { TerasaStore.save(terasy); }
+
+function addTerasa(d, skip) {
+  d = d || {};
+  var id = d.id || tid++;
+  if (id >= tid) tid = id + 1;
+  terasy.push({
+    id: id,
+    meno: d.meno || '',
+    mesto: d.mesto || '',
+    typ: d.typ || '',
+    farba: d.farba || '',
+    stav: typeof d.stav === 'number' ? d.stav : 0,
+    datum: d.datum || today()
+  });
+  if (!skip) { renderTerasy(); renderMap(); saveTerasy(); }
+}
+function updTerasa(id, f, v) {
+  var t = terasy.filter(function (x) { return x.id === id; })[0];
+  if (!t) return;
+  t[f] = (f === 'stav') ? parseInt(v, 10) || 0 : v;
+  saveTerasy();
+  if (f === 'typ' || f === 'stav') { renderTerasy(); renderMap(); renderSummary(); }
+  else if (f === 'mesto') mapSoon();
+  else if (f === 'farba') sumSoon();
+  else renderTerasyCount();
+}
+function removeTerasa(id) {
+  var t = terasy.filter(function (x) { return x.id === id; })[0];
+  if (t && (t.meno || t.mesto) && !confirm('Zmazať „' + (t.meno || t.mesto) + '“?')) return;
+  terasy = terasy.filter(function (x) { return x.id !== id; });
+  renderTerasy(); renderMap(); saveTerasy();
+}
+function renderTerasyCount() {
+  var open = terasy.filter(function (t) { return t.stav < 5; }).length;
+  var el = document.getElementById('teCount');
+  if (el) el.textContent = open + ' rozpracovaných · ' + terasy.length + ' spolu';
+}
+function renderTerasy() {
+  var tb = document.getElementById('teBody');
+  if (!tb) return;
+  if (!terasy.length) {
+    tb.innerHTML = '<tr><td colspan="7" class="empty">Zatiaľ žiadne terasy. Pridaj prvú tlačidlom nižšie.</td></tr>';
+    renderTerasyCount(); return;
+  }
+  tb.innerHTML = terasy.map(function (t, i) {
+    var tt = terasaTyp(t.typ);
+    var opts = '<option value="">— typ —</option>' + TERASA_TYPY.map(function (x) {
+      return '<option value="' + x.k + '"' + (t.typ === x.k ? ' selected' : '') + '>' + x.l + '</option>';
+    }).join('');
+    var stavOpts = STAGES.map(function (sg, si) {
+      return '<option value="' + si + '"' + (t.stav === si ? ' selected' : '') + '>' + (si + 1) + '. ' + sg.label + '</option>';
+    }).join('');
+    return '<tr>' +
+      '<td><button class="btn-del" onclick="removeTerasa(' + t.id + ')">✕</button></td>' +
+      '<td class="rnum">' + (i + 1) + '</td>' +
+      '<td><input type="text" value="' + esc(t.meno) + '" placeholder="Meno zákazníka" style="min-width:150px" oninput="updTerasa(' + t.id + ',\'meno\',this.value)"></td>' +
+      '<td><input type="text" value="' + esc(t.mesto) + '" placeholder="Mesto" list="dl-mesta" style="min-width:130px" oninput="updTerasa(' + t.id + ',\'mesto\',this.value)"></td>' +
+      '<td><select style="min-width:158px;color:' + tt.c + ';font-weight:600" onchange="updTerasa(' + t.id + ',\'typ\',this.value)">' + opts + '</select></td>' +
+      '<td><input type="text" value="' + esc(t.farba) + '" maxlength="10" placeholder="RAL" style="width:78px;text-align:center;font-family:\'JetBrains Mono\',monospace;letter-spacing:1px" oninput="updTerasa(' + t.id + ',\'farba\',this.value)"></td>' +
+      '<td><select class="stav-sel" style="--c:' + STAGES[t.stav].color + '" onchange="updTerasa(' + t.id + ',\'stav\',this.value)">' + stavOpts + '</select></td>' +
+      '</tr>';
+  }).join('');
+  renderTerasyCount();
+}
+
+/* ---------- 16. INIT ---------- */
+(async function init() {
+  renderChips();
+  stock = StockStore.load();
+  renderMestaDatalist();
+  opravy = []; oid = 1;
+  OpravaStore.load().forEach(function (o) { addOprava(o, true); });
+  terasy = []; tid = 1;
+  TerasaStore.load().forEach(function (t) { addTerasa(t, true); });
+  attachDragScroll(document.getElementById('oprWrap'));
+  attachDragScroll(document.getElementById('terWrap'));
+  attachDragScroll(document.querySelector('.tblwrap'));
+  attachDragScroll(document.querySelector('.kanban'), '.kcard');
+  var stored = await Store.all();
+  loadRows(stored ? stored : SEED);
+  document.getElementById('saved').textContent = stored ? 'uložené' : '';
+  if (!stored) persist();
+})();
+</script>
+</body>
+</html>
