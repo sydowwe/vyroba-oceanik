@@ -224,12 +224,19 @@
   </div>
   <div class="hdr-right">
     <span class="saved" id="saved"></span>
+    <button class="btn-sm" id="btnFileSync" onclick="connectFileStorage()">📁 Pripojiť súbor</button>
     <button class="btn-sm" onclick="exportJSON()">↓ Export</button>
     <button class="btn-sm" onclick="document.getElementById('imp').click()">↑ Import</button>
     <input type="file" id="imp" accept="application/json" style="display:none" onchange="importJSON(this)">
     <button class="btn-sm danger" onclick="wipeAll()">Vymazať</button>
   </div>
 </header>
+
+<div id="fileConnectBanner" style="display:none;align-items:center;gap:10px;background:var(--surface2);border-bottom:1px solid var(--border);padding:8px 14px;font-size:12px;color:var(--text2);">
+  <span>📁 Pripoj lokálny súbor (napr. <code>data/oceanik-data.json</code> v git repozitári), aby sa dáta ukladali aj mimo prehliadača.</span>
+  <button class="btn-sm" onclick="connectFileStorage()">Vybrať súbor</button>
+  <button class="btn-sm" onclick="dismissFileBanner()" style="margin-left:auto">Neskôr</button>
+</div>
 
 <!-- ============ TABUĽKA ============ -->
 <div class="view on" id="v-tbl">
@@ -405,8 +412,204 @@ function persist() {
       el.textContent = '✓ uložené';
       el.classList.add('flash');
       setTimeout(function () { el.classList.remove('flash'); el.textContent = 'uložené'; }, 1400);
+      syncToFile();
     });
   }, 250);
+}
+
+/* ---------- 1b. PERZISTENCIA DO SÚBORU (File System Access API) ----------
+   localStorage zostáva rýchla cache (číta sa okamžite pri štarte).
+   Súbor na disku (napr. data/oceanik-data.json) je navyše zdroj pravdy pre git —
+   pri každej zmene dát sa doň zapíše rovnaký obsah ako do localStorage. */
+var FILE_SYNC_TS_KEY = 'oceanik_filesync_ts_v1';
+var FILE_BANNER_DISMISSED_KEY = 'oceanik_file_banner_dismissed';
+
+var FilePersistence = (function () {
+  var supported = typeof window.showSaveFilePicker === 'function';
+  var DB_NAME = 'oceanik-fs', STORE_NAME = 'handles', HANDLE_KEY = 'dataFile';
+  var fileHandle = null;
+
+  function openDb() {
+    return new Promise(function (resolve, reject) {
+      var req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = function () { req.result.createObjectStore(STORE_NAME); };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }
+  function idbGet(key) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var req = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(key);
+        req.onsuccess = function () { resolve(req.result || null); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+  function idbSet(key, val) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(val, key);
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+
+  async function verifyPermission(handle, forWrite) {
+    var opts = forWrite ? { mode: 'readwrite' } : {};
+    try {
+      if ((await handle.queryPermission(opts)) === 'granted') return true;
+      if ((await handle.requestPermission(opts)) === 'granted') return true;
+    } catch (e) {}
+    return false;
+  }
+
+  async function restoreHandle() {
+    if (!supported) return null;
+    try {
+      var h = await idbGet(HANDLE_KEY);
+      if (!h) return null;
+      if (!(await verifyPermission(h, true))) return null;
+      fileHandle = h;
+      return h;
+    } catch (e) { return null; }
+  }
+
+  async function pickFile() {
+    if (!supported) return null;
+    try {
+      var handle = await window.showSaveFilePicker({
+        suggestedName: 'oceanik-data.json',
+        types: [{ description: 'JSON dáta', accept: { 'application/json': ['.json'] } }]
+      });
+      fileHandle = handle;
+      try { await idbSet(HANDLE_KEY, handle); } catch (e) { console.warn('Uloženie referencie na súbor zlyhalo (funguje aspoň pre túto reláciu):', e); }
+      return handle;
+    } catch (e) { return null; } // používateľ zrušil výber
+  }
+
+  async function readFile() {
+    if (!fileHandle) return null;
+    try {
+      var file = await fileHandle.getFile();
+      var text = await file.text();
+      return text ? JSON.parse(text) : null;
+    } catch (e) { return null; }
+  }
+
+  async function getLastModified() {
+    if (!fileHandle) return 0;
+    try { return (await fileHandle.getFile()).lastModified; } catch (e) { return 0; }
+  }
+
+  async function writeFile(data) {
+    if (!fileHandle || !supported) return false;
+    try {
+      if (!(await verifyPermission(fileHandle, true))) return false;
+      var writable = await fileHandle.createWritable();
+      await writable.write(JSON.stringify(data, null, 2));
+      await writable.close();
+      localStorage.setItem(FILE_SYNC_TS_KEY, String(Date.now()));
+      return true;
+    } catch (e) { console.warn('Zápis do súboru zlyhal:', e); return false; }
+  }
+
+  return {
+    supported: supported,
+    restoreHandle: restoreHandle,
+    pickFile: pickFile,
+    readFile: readFile,
+    writeFile: writeFile,
+    getLastModified: getLastModified,
+    hasHandle: function () { return !!fileHandle; },
+    fileName: function () { return fileHandle ? fileHandle.name : ''; }
+  };
+})();
+
+function currentSnapshot() {
+  return { zakazky: rows, terasy: terasy, opravy: opravy, sklad: stock };
+}
+
+function applySnapshot(raw) {
+  var data = Array.isArray(raw) ? raw : raw.zakazky;
+  if (!Array.isArray(data)) return false;
+  if (raw && raw.opravy) {
+    opravy = []; oid = 1;
+    raw.opravy.forEach(function (o) { addOprava(o, true); });
+    saveOpravy();
+  }
+  if (raw && raw.terasy) {
+    terasy = []; tid = 1;
+    raw.terasy.forEach(function (t) { addTerasa(t, true); });
+    saveTerasy();
+  }
+  if (raw && raw.sklad) { stock = raw.sklad; StockStore.save(stock); }
+  loadRows(data);
+  persist();
+  return true;
+}
+
+var fileSyncTimer = null;
+function syncToFile() {
+  if (!FilePersistence.supported || !FilePersistence.hasHandle()) return;
+  clearTimeout(fileSyncTimer);
+  fileSyncTimer = setTimeout(function () {
+    FilePersistence.writeFile(currentSnapshot()).then(function (ok) {
+      updateFileStatusUI(ok ? 'ok' : 'error');
+    });
+  }, 400);
+}
+
+function updateFileStatusUI(state) {
+  var btn = document.getElementById('btnFileSync');
+  if (!btn) return;
+  if (!FilePersistence.supported) {
+    btn.style.display = 'none';
+    return;
+  }
+  if (FilePersistence.hasHandle()) {
+    btn.textContent = state === 'error' ? '📁 chyba zápisu' : '📁 ' + FilePersistence.fileName();
+    btn.title = 'Dáta sa priebežne ukladajú aj do súboru: ' + FilePersistence.fileName();
+  } else {
+    btn.textContent = '📁 Pripojiť súbor';
+    btn.title = 'Vyber súbor na disku pre zálohu dát (git)';
+  }
+}
+
+async function connectFileStorage() {
+  if (!FilePersistence.supported) {
+    alert('Tento prehliadač nepodporuje ukladanie do súboru (File System Access API). Funguje v Chrome / Edge.');
+    return;
+  }
+  var handle = await FilePersistence.pickFile();
+  if (!handle) return;
+  var banner = document.getElementById('fileConnectBanner');
+  if (banner) banner.style.display = 'none';
+  await FilePersistence.writeFile(currentSnapshot());
+  updateFileStatusUI('ok');
+}
+
+function dismissFileBanner() {
+  localStorage.setItem(FILE_BANNER_DISMISSED_KEY, '1');
+  var banner = document.getElementById('fileConnectBanner');
+  if (banner) banner.style.display = 'none';
+}
+
+async function checkFileForExternalChanges() {
+  if (!FilePersistence.hasHandle()) return;
+  var fileData = await FilePersistence.readFile();
+  if (!fileData) return;
+  var same = JSON.stringify(fileData) === JSON.stringify(currentSnapshot());
+  if (same) return;
+  var lastSyncTs = parseInt(localStorage.getItem(FILE_SYNC_TS_KEY) || '0', 10);
+  var fileTs = await FilePersistence.getLastModified();
+  if (!lastSyncTs || fileTs > lastSyncTs + 1000) {
+    if (confirm('Súbor „' + FilePersistence.fileName() + '“ na disku obsahuje iné dáta ako aktuálne zobrazené (asi zmenené mimo appky, napr. cez git). Načítať dáta zo súboru?')) {
+      applySnapshot(fileData);
+    }
+  }
 }
 
 /* ---------- 2. MODEL ---------- */
@@ -1202,6 +1405,7 @@ var StockStore = {
   },
   save: function (obj) {
     localStorage.setItem(STOCK_KEY, JSON.stringify(obj));
+    syncToFile();
     // API verzia:  await fetch('/api/stock', {method:'PUT', body:JSON.stringify(obj)});
   }
 };
@@ -1430,7 +1634,7 @@ var oid = 1;
 
 var OpravaStore = {
   load: function () { try { return JSON.parse(localStorage.getItem(OPRAVY_KEY)) || []; } catch (e) { return []; } },
-  save: function (list) { localStorage.setItem(OPRAVY_KEY, JSON.stringify(list)); }
+  save: function (list) { localStorage.setItem(OPRAVY_KEY, JSON.stringify(list)); syncToFile(); }
   // API verzia: fetch('/api/opravy', ...)
 };
 function saveOpravy() { OpravaStore.save(opravy); }
@@ -1715,7 +1919,7 @@ function terasaTyp(k) {
 
 var TerasaStore = {
   load: function () { try { return JSON.parse(localStorage.getItem(TERASY_KEY)) || []; } catch (e) { return []; } },
-  save: function (list) { localStorage.setItem(TERASY_KEY, JSON.stringify(list)); }
+  save: function (list) { localStorage.setItem(TERASY_KEY, JSON.stringify(list)); syncToFile(); }
   // API verzia: fetch('/api/terasy', ...)
 };
 function saveTerasy() { TerasaStore.save(terasy); }
@@ -1801,6 +2005,16 @@ function renderTerasy() {
   loadRows(stored ? stored : SEED);
   document.getElementById('saved').textContent = stored ? 'uložené' : '';
   if (!stored) persist();
+
+  /* --- súbor na disku (git) --- */
+  await FilePersistence.restoreHandle();
+  updateFileStatusUI('ok');
+  if (FilePersistence.hasHandle()) {
+    await checkFileForExternalChanges();
+  } else if (FilePersistence.supported && !localStorage.getItem(FILE_BANNER_DISMISSED_KEY)) {
+    var banner = document.getElementById('fileConnectBanner');
+    if (banner) banner.style.display = 'flex';
+  }
 })();
 </script>
 </body>
