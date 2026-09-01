@@ -1115,6 +1115,15 @@ function renderSummary() {
       '<div class="splitline"><span>plán <b>' + planV + '</b></span><span>spotrebované <b>' + doneV + '</b></span><span>zostáva <b>' + (planV - doneV) + '</b></span></div>' +
       '</div>';
   }
+  function totalBoxM(rgb, color, label, sub, val, doneV, planV) {
+    return '<div class="sb-total" style="background:rgba(' + rgb + ',0.06);border:1px solid rgba(' + rgb + ',0.2);display:block">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between">' +
+        '<div class="sb-total-lbl">' + label + '<strong>' + sub + '</strong></div>' +
+        '<div><div class="sb-total-v" style="color:' + color + '">' + fmtM(val) + '</div><div class="sb-total-u">metrov</div></div>' +
+      '</div>' +
+      '<div class="splitline"><span>plán <b>' + fmtM(planV) + '</b></span><span>spotrebované <b>' + fmtM(doneV) + '</b></span><span>zostáva <b>' + fmtM(planV - doneV) + '</b></span></div>' +
+      '</div>';
+  }
   function lensSection(byMap, color) {
     var lens = ['5,2', '5,7', '6'].filter(function (l) { return byMap[l]; });
     var h = '<div class="hl-grid">';
@@ -1135,13 +1144,7 @@ function renderSummary() {
     '<div class="hl-grid">' + hlCard('typ', '×6', alu.spodok6, 'var(--teal)') + hlCard('typ', '×5', alu.spodok5, 'var(--teal)') + '</div>' +
     totalBox('6,182,212', 'var(--teal)', 'Celkom spodky', '×5 + ×6', alu.totalSpodok, aluDone.totalSpodok, aluAll.totalSpodok) + '</div></div>';
   html += '<div>' + secHdr('var(--green)', 'Dráhy (koľajnice)', aluNote) +
-    '<div class="sb-total" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);display:block">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between">' +
-        '<div class="sb-total-lbl">Celkom dráh<strong>v metroch</strong></div>' +
-        '<div><div class="sb-total-v" style="color:var(--green)">' + fmtM(alu.totalDrah) + '</div><div class="sb-total-u">metrov</div></div>' +
-      '</div>' +
-      '<div class="splitline"><span>plán <b>' + fmtM(aluAll.totalDrah) + '</b></span><span>spotrebované <b>' + fmtM(aluDone.totalDrah) + '</b></span><span>zostáva <b>' + fmtM(aluAll.totalDrah - aluDone.totalDrah) + '</b></span></div>' +
-    '</div></div>';
+    totalBoxM('16,185,129', 'var(--green)', 'Celkom dráh', 'v metroch', alu.totalDrah, aluDone.totalDrah, aluAll.totalDrah) + '</div></div>';
   html += '</div>';
 
   /* ===== hrubý profil ===== */
@@ -1157,13 +1160,7 @@ function renderSummary() {
         '<div class="hl-grid">' + hlCard('typ', '×6', alu.spodok6h, 'var(--orange)') + hlCard('typ', '×5', alu.spodok5h, 'var(--orange)') + '</div>' +
         totalBox('249,115,22', 'var(--orange)', 'Spodky hrubý', '×5 + ×6', alu.totalSpodokH, aluDone.totalSpodokH, aluAll.totalSpodokH) + '</div></div>' +
       '<div>' + secHdr('var(--orange)', 'Hrubý profil — Dráhy', aluNote) +
-        '<div class="sb-total" style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.2);display:block">' +
-          '<div style="display:flex;align-items:center;justify-content:space-between">' +
-            '<div class="sb-total-lbl">Dráhy hrubý<strong>v metroch</strong></div>' +
-            '<div><div class="sb-total-v" style="color:var(--orange)">' + fmtM(alu.totalDrahH) + '</div><div class="sb-total-u">metrov</div></div>' +
-          '</div>' +
-          '<div class="splitline"><span>plán <b>' + fmtM(aluAll.totalDrahH) + '</b></span><span>spotrebované <b>' + fmtM(aluDone.totalDrahH) + '</b></span><span>zostáva <b>' + fmtM(aluAll.totalDrahH - aluDone.totalDrahH) + '</b></span></div>' +
-        '</div></div>' +
+        totalBoxM('249,115,22', 'var(--orange)', 'Dráhy hrubý', 'v metroch', alu.totalDrahH, aluDone.totalDrahH, aluAll.totalDrahH) + '</div></div>' +
       '</div></div>';
   }
 
