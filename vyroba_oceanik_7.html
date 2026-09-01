@@ -254,8 +254,10 @@
           <th></th><th></th><th>#</th><th>Meno</th><th>Mesto</th><th>Stav výroby</th><th>Model</th>
           <th class="c">Hrubý profil</th><th class="c">Segmenty</th><th class="c">Šírka (m)</th>
           <th class="c">Dĺžka seg.</th><th class="c">Typ poly.</th><th class="c">Farba (RAL)</th>
+          <th class="c">Dĺžka drah (m)</th>
           <th class="c">H</th><th class="c">O</th><th class="c">Spodok</th>
           <th class="c">Dĺžka prof.</th><th class="c">Rozmer poly.</th><th class="c">Počet ks</th>
+          <th class="c">Počet drah (m)</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -661,6 +663,13 @@ function calcDlzka(sirka) {
 }
 function calcRozmer(dlzkaTyp) { if (!dlzkaTyp) return null; return dlzkaTyp === 'standard' ? '2,1' : '1,25'; }
 function calcPocet(seg, dlzkaTyp) { if (!seg || !dlzkaTyp) return null; return seg * (dlzkaTyp === 'standard' ? 1 : 2); }
+/* dĺžka drah (koľajníc): zadaná dĺžka × počet segmentov × (1 pri jednokoľajovom, 2 pri ostatných — 2 strany) */
+function calcDrahy(dlzka, seg, model) {
+  if (!dlzka || !seg) return null;
+  var mult = model === 'Jednokolajove' ? 1 : 2;
+  return Math.round(dlzka * seg * mult * 100) / 100;
+}
+function fmtM(n) { return (Math.round((n || 0) * 100) / 100).toString().replace('.', ','); }
 
 /* jednotný výstup pre normálny aj manuálny riadok */
 function computeRow(r) {
@@ -669,7 +678,8 @@ function computeRow(r) {
       valid: true,
       H: parseInt(r.mH, 10) || 0, O: parseInt(r.mO, 10) || 0,
       sp: r.mSp || null, dl: r.mDl || null,
-      rm: r.mRm || null, pc: parseInt(r.mPc, 10) || 0
+      rm: r.mRm || null, pc: parseInt(r.mPc, 10) || 0,
+      drah: parseFloat(r.mDrahy) || 0
     };
   }
   if (!r.seg || !r.sirka || !r.dlzkaTyp) return { valid: false };
@@ -677,7 +687,8 @@ function computeRow(r) {
     valid: true,
     H: calcH(r.typ, r.seg) || 0, O: calcO(r.typ, r.seg) || 0,
     sp: calcSpodok(r.dlzkaTyp, r.seg), dl: calcDlzka(r.sirka),
-    rm: calcRozmer(r.dlzkaTyp), pc: calcPocet(r.seg, r.dlzkaTyp)
+    rm: calcRozmer(r.dlzkaTyp), pc: calcPocet(r.seg, r.dlzkaTyp),
+    drah: calcDrahy(r.drahy, r.seg, r.model) || 0
   };
 }
 
@@ -699,8 +710,9 @@ function addRow(d, skipRender) {
     dlzkaTyp: d.dlzkaTyp || 'standard',
     typ: d.typ || 'dutinkovy',
     farba: d.farba || '',
+    drahy: d.drahy || '',
     mH: d.mH || '', mO: d.mO || '', mSp: d.mSp || '',
-    mDl: d.mDl || '', mRm: d.mRm || '', mPc: d.mPc || '',
+    mDl: d.mDl || '', mRm: d.mRm || '', mPc: d.mPc || '', mDrahy: d.mDrahy || '',
     stav: typeof d.stav === 'number' ? d.stav : 0,
     dates: d.dates || {}
   };
@@ -759,7 +771,7 @@ function updField(id, field, value) {
   var r = getRow(id);
   if (!r) return;
   if (field === 'seg') r[field] = value === '' ? '' : (parseInt(value, 10) || '');
-  else if (field === 'sirka') r[field] = value === '' ? '' : (parseFloat(value) || '');
+  else if (field === 'sirka' || field === 'drahy' || field === 'mDrahy') r[field] = value === '' ? '' : (parseFloat(value) || '');
   else if (field === 'hruby') r.hruby = value === '1';
   else if (field === 'mH' || field === 'mO' || field === 'mPc') r[field] = value === '' ? '' : (parseInt(value, 10) || '');
   else r[field] = value;
@@ -843,12 +855,14 @@ function appendRow(r) {
       '<td colspan="3"></td>' +
       '<td>' + polySel + '</td>' +
       '<td>' + farbaInp + '</td>' +
+      '<td></td>' +
       '<td class="calc">' + minp('mH', r.mH, 'H', 46) + '</td>' +
       '<td class="calc">' + minp('mO', r.mO, 'O', 46) + '</td>' +
       '<td class="calc">' + mtext('mSp', r.mSp, '2x6', 54) + '</td>' +
       '<td class="calc">' + mtext('mDl', r.mDl, '5,2', 54) + '</td>' +
       '<td class="calc">' + rmSel + '</td>' +
-      '<td class="calc">' + minp('mPc', r.mPc, 'ks', 46) + '</td>';
+      '<td class="calc">' + minp('mPc', r.mPc, 'ks', 46) + '</td>' +
+      '<td class="calc">' + minp('mDrahy', r.mDrahy, 'm', 54) + '</td>';
     tbody.appendChild(tr);
     return;
   }
@@ -876,12 +890,14 @@ function appendRow(r) {
       '<option value="predlzene"' + (r.dlzkaTyp === 'predlzene' ? ' selected' : '') + '>Predĺžené</option></select></td>' +
     '<td>' + polySel + '</td>' +
     '<td>' + farbaInp + '</td>' +
+    '<td><input type="number" value="' + esc(r.drahy) + '" step="0.1" min="0" placeholder="m" style="width:70px;text-align:center" oninput="updField(' + r.id + ',\'drahy\',this.value)"></td>' +
     '<td class="calc" id="h-' + r.id + '">—</td>' +
     '<td class="calc" id="o-' + r.id + '">—</td>' +
     '<td class="calc" id="sp-' + r.id + '">—</td>' +
     '<td class="calc" id="dl-' + r.id + '">—</td>' +
     '<td class="calc" id="rm-' + r.id + '">—</td>' +
-    '<td class="calc" id="pc-' + r.id + '">—</td>';
+    '<td class="calc" id="pc-' + r.id + '">—</td>' +
+    '<td class="calc" id="drah-' + r.id + '">—</td>';
 
   tbody.appendChild(tr);
   updateCalcCells(r.id);
@@ -893,13 +909,14 @@ function updateCalcCells(id) {
   var c = computeRow(r);
   var dash = '<span style="color:var(--text3)">—</span>';
   function set(k, html) { var el = document.getElementById(k + '-' + id); if (el) el.innerHTML = html; }
-  if (!c.valid) { ['h', 'o', 'sp', 'dl', 'rm', 'pc'].forEach(function (k) { set(k, dash); }); return; }
+  if (!c.valid) { ['h', 'o', 'sp', 'dl', 'rm', 'pc', 'drah'].forEach(function (k) { set(k, dash); }); return; }
   set('h', '<span class="calc-hi">' + c.H + '</span>');
   set('o', '<span class="calc-hi">' + c.O + '</span>');
   set('sp', c.sp ? '<span class="badge badge-sp">' + c.sp + '</span>' : dash);
   set('dl', c.dl ? '<span class="badge badge-dl">' + c.dl + ' m</span>' : dash);
   set('rm', c.rm ? '<span class="mono" style="font-size:12px;color:var(--text)">' + c.rm + ' m</span>' : dash);
   set('pc', c.pc !== null ? '<span class="calc-hi">' + c.pc + '</span>' : dash);
+  set('drah', c.drah ? '<span class="calc-hi">' + fmtM(c.drah) + ' m</span>' : dash);
 }
 
 function updateRowNumbers() {
@@ -950,24 +967,29 @@ function aggregate(list) {
     totalH: 0, totalO: 0, totalHh: 0, totalOh: 0,
     spodok5: 0, spodok6: 0, spodok5h: 0, spodok6h: 0,
     poly: { dutinkovy: { '2,1': 0, '1,25': 0 }, ciry: { '2,1': 0, '1,25': 0 } },
+    totalDrah: 0, totalDrahH: 0,
     hasHruby: false
   };
   list.forEach(function (r) {
     var c = computeRow(r);
     if (!c.valid) return;
     a.totalH += c.H; a.totalO += c.O;
+    a.totalDrah += c.drah || 0;
     if (c.dl) { a.H_by[c.dl] = (a.H_by[c.dl] || 0) + c.H; a.O_by[c.dl] = (a.O_by[c.dl] || 0) + c.O; }
     if (c.sp) { var p = String(c.sp).split('x'); var n = parseInt(p[0], 10) || 0; if (p[1] === '5') a.spodok5 += n; if (p[1] === '6') a.spodok6 += n; }
     if (c.rm && c.pc > 0) { var k = r.typ === 'ciry' ? 'ciry' : 'dutinkovy'; if (a.poly[k][c.rm] !== undefined) a.poly[k][c.rm] += c.pc; }
     if (r.hruby) {
       a.hasHruby = true;
       a.totalHh += c.H; a.totalOh += c.O;
+      a.totalDrahH += c.drah || 0;
       if (c.dl) { a.Hh_by[c.dl] = (a.Hh_by[c.dl] || 0) + c.H; a.Oh_by[c.dl] = (a.Oh_by[c.dl] || 0) + c.O; }
       if (c.sp) { var p2 = String(c.sp).split('x'); var n2 = parseInt(p2[0], 10) || 0; if (p2[1] === '5') a.spodok5h += n2; if (p2[1] === '6') a.spodok6h += n2; }
     }
   });
   a.totalSpodok = a.spodok5 + a.spodok6;
   a.totalSpodokH = a.spodok5h + a.spodok6h;
+  a.totalDrah = Math.round(a.totalDrah * 100) / 100;
+  a.totalDrahH = Math.round(a.totalDrahH * 100) / 100;
   a.totalDut = a.poly.dutinkovy['2,1'] + a.poly.dutinkovy['1,25'];
   a.totalCiry = a.poly.ciry['2,1'] + a.poly.ciry['1,25'];
   return a;
@@ -1112,6 +1134,14 @@ function renderSummary() {
   html += '<div>' + secHdr('var(--teal)', 'Spodky', aluNote) +
     '<div class="hl-grid">' + hlCard('typ', '×6', alu.spodok6, 'var(--teal)') + hlCard('typ', '×5', alu.spodok5, 'var(--teal)') + '</div>' +
     totalBox('6,182,212', 'var(--teal)', 'Celkom spodky', '×5 + ×6', alu.totalSpodok, aluDone.totalSpodok, aluAll.totalSpodok) + '</div></div>';
+  html += '<div>' + secHdr('var(--green)', 'Dráhy (koľajnice)', aluNote) +
+    '<div class="sb-total" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);display:block">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between">' +
+        '<div class="sb-total-lbl">Celkom dráh<strong>v metroch</strong></div>' +
+        '<div><div class="sb-total-v" style="color:var(--green)">' + fmtM(alu.totalDrah) + '</div><div class="sb-total-u">metrov</div></div>' +
+      '</div>' +
+      '<div class="splitline"><span>plán <b>' + fmtM(aluAll.totalDrah) + '</b></span><span>spotrebované <b>' + fmtM(aluDone.totalDrah) + '</b></span><span>zostáva <b>' + fmtM(aluAll.totalDrah - aluDone.totalDrah) + '</b></span></div>' +
+    '</div></div>';
   html += '<div>' + secHdr('var(--dut)', 'Polykarbonát — Dutinkový', polNote) +
     '<div class="hl-grid">' + hlCard('rozmer', '2,1 m', pol.poly.dutinkovy['2,1'], 'var(--dut)') + hlCard('rozmer', '1,25 m', pol.poly.dutinkovy['1,25'], 'var(--dut)') + '</div>' +
     totalBox('99,102,241', 'var(--dut)', 'Dutinkový spolu', '2,1 + 1,25', pol.totalDut, polDone.totalDut, polAll.totalDut) + '</div></div>';
@@ -1132,6 +1162,14 @@ function renderSummary() {
       '<div>' + secHdr('var(--orange)', 'Hrubý profil — Spodky', aluNote) +
         '<div class="hl-grid">' + hlCard('typ', '×6', alu.spodok6h, 'var(--orange)') + hlCard('typ', '×5', alu.spodok5h, 'var(--orange)') + '</div>' +
         totalBox('249,115,22', 'var(--orange)', 'Spodky hrubý', '×5 + ×6', alu.totalSpodokH, aluDone.totalSpodokH, aluAll.totalSpodokH) + '</div></div>' +
+      '<div>' + secHdr('var(--orange)', 'Hrubý profil — Dráhy', aluNote) +
+        '<div class="sb-total" style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.2);display:block">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between">' +
+            '<div class="sb-total-lbl">Dráhy hrubý<strong>v metroch</strong></div>' +
+            '<div><div class="sb-total-v" style="color:var(--orange)">' + fmtM(alu.totalDrahH) + '</div><div class="sb-total-u">metrov</div></div>' +
+          '</div>' +
+          '<div class="splitline"><span>plán <b>' + fmtM(aluAll.totalDrahH) + '</b></span><span>spotrebované <b>' + fmtM(aluDone.totalDrahH) + '</b></span><span>zostáva <b>' + fmtM(aluAll.totalDrahH - aluDone.totalDrahH) + '</b></span></div>' +
+        '</div></div>' +
       '</div></div>';
   }
 
@@ -1468,7 +1506,10 @@ function buildStockItems() {
         { k: 'Pd125', l: 'Dutinkový 1,25 m', need: pol.poly.dutinkovy['1,25'] }] },
     { g: 'Polykarbonát — Číry', c: 'var(--ciry)', note: 'tabule', items: [
         { k: 'Pc21', l: 'Číry 2,1 m', need: pol.poly.ciry['2,1'] },
-        { k: 'Pc125', l: 'Číry 1,25 m', need: pol.poly.ciry['1,25'] }] }
+        { k: 'Pc125', l: 'Číry 1,25 m', need: pol.poly.ciry['1,25'] }] },
+    { g: 'Dráhy (koľajnice)', c: 'var(--green)', note: 'normálne + hrubé, v metroch', items: [
+        { k: 'DrahyN', l: 'Dráhy — normálny (m)', need: Math.round((alu.totalDrah - alu.totalDrahH) * 100) / 100 },
+        { k: 'DrahyH', l: 'Dráhy — hrubý (m)', need: alu.totalDrahH }] }
   ];
 }
 
