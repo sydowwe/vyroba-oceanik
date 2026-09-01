@@ -1142,12 +1142,6 @@ function renderSummary() {
       '</div>' +
       '<div class="splitline"><span>plán <b>' + fmtM(aluAll.totalDrah) + '</b></span><span>spotrebované <b>' + fmtM(aluDone.totalDrah) + '</b></span><span>zostáva <b>' + fmtM(aluAll.totalDrah - aluDone.totalDrah) + '</b></span></div>' +
     '</div></div>';
-  html += '<div>' + secHdr('var(--dut)', 'Polykarbonát — Dutinkový', polNote) +
-    '<div class="hl-grid">' + hlCard('rozmer', '2,1 m', pol.poly.dutinkovy['2,1'], 'var(--dut)') + hlCard('rozmer', '1,25 m', pol.poly.dutinkovy['1,25'], 'var(--dut)') + '</div>' +
-    totalBox('99,102,241', 'var(--dut)', 'Dutinkový spolu', '2,1 + 1,25', pol.totalDut, polDone.totalDut, polAll.totalDut) + '</div></div>';
-  html += '<div>' + secHdr('var(--ciry)', 'Polykarbonát — Číry', polNote) +
-    '<div class="hl-grid">' + hlCard('rozmer', '2,1 m', pol.poly.ciry['2,1'], 'var(--ciry)') + hlCard('rozmer', '1,25 m', pol.poly.ciry['1,25'], 'var(--ciry)') + '</div>' +
-    totalBox('6,182,212', 'var(--ciry)', 'Číry spolu', '2,1 + 1,25', pol.totalCiry, polDone.totalCiry, polAll.totalCiry) + '</div></div>';
   html += '</div>';
 
   /* ===== hrubý profil ===== */
@@ -1172,6 +1166,18 @@ function renderSummary() {
         '</div></div>' +
       '</div></div>';
   }
+
+  /* ===== polykarbonát ===== */
+  html += '<div style="margin-top:24px;border-top:1px solid var(--border);padding-top:22px;">' +
+    '<div class="sub-section-title" style="color:var(--ciry)"><div style="width:8px;height:8px;border-radius:50%;background:var(--ciry)"></div>Súhrn materiálu — Polykarbonát</div>' +
+    '<div class="summary-grid">' +
+    '<div>' + secHdr('var(--dut)', 'Polykarbonát — Dutinkový', polNote) +
+      '<div class="hl-grid">' + hlCard('rozmer', '2,1 m', pol.poly.dutinkovy['2,1'], 'var(--dut)') + hlCard('rozmer', '1,25 m', pol.poly.dutinkovy['1,25'], 'var(--dut)') + '</div>' +
+      totalBox('99,102,241', 'var(--dut)', 'Dutinkový spolu', '2,1 + 1,25', pol.totalDut, polDone.totalDut, polAll.totalDut) + '</div></div>' +
+    '<div>' + secHdr('var(--ciry)', 'Polykarbonát — Číry', polNote) +
+      '<div class="hl-grid">' + hlCard('rozmer', '2,1 m', pol.poly.ciry['2,1'], 'var(--ciry)') + hlCard('rozmer', '1,25 m', pol.poly.ciry['1,25'], 'var(--ciry)') + '</div>' +
+      totalBox('6,182,212', 'var(--ciry)', 'Číry spolu', '2,1 + 1,25', pol.totalCiry, polDone.totalCiry, polAll.totalCiry) + '</div></div>' +
+    '</div></div>';
 
   /* ===== farby RAL ===== */
   var farbaSrc = subset(ST_LAK, mode);
