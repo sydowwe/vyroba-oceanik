@@ -626,7 +626,7 @@ var STAGES = [
   { key: 'hot',    label: 'Hotové',       short: 'Hotové',    color: 'var(--s4)', sub: 'pripravené na montáž' },
   { key: 'mont',   label: 'Namontované',  short: 'Montáž',    color: 'var(--s5)', sub: 'odovzdané' }
 ];
-var ST_ALU = 1, ST_LAK = 2, ST_POLY = 3;
+var ST_ALU = 1, ST_LAK = 2, ST_POLY = 3, ST_MONT = 5;
 
 var MODELS = ['Klasik', 'Klasik Lux', 'Elegance Mini', 'Jednokolajove', 'Komfort', 'Praktik', 'Praktik Plus', 'Elegance'];
 var MODELS_DISPLAY = { 'Klasik': 'Klasik', 'Klasik Lux': 'Klasik Lux', 'Elegance Mini': 'Elegance Mini', 'Jednokolajove': 'Jednokoľajové', 'Komfort': 'Komfort', 'Praktik': 'Praktik', 'Praktik Plus': 'Praktik Plus', 'Elegance': 'Elegance' };
@@ -1090,12 +1090,16 @@ function renderSummary() {
 
   var aluAll = aggregate(rows), aluDone = aggregate(subset(ST_ALU, 'done')), aluLeft = aggregate(subset(ST_ALU, 'left'));
   var polAll = aggregate(rows), polDone = aggregate(subset(ST_POLY, 'done')), polLeft = aggregate(subset(ST_POLY, 'left'));
+  /* dráhy sa montujú až na konci — potrebné vo všetkých stavoch okrem už Namontovaného */
+  var drahAll = aggregate(rows), drahDone = aggregate(subset(ST_MONT, 'done')), drahLeft = aggregate(subset(ST_MONT, 'left'));
   var alu = mode === 'plan' ? aluAll : mode === 'done' ? aluDone : aluLeft;
   var pol = mode === 'plan' ? polAll : mode === 'done' ? polDone : polLeft;
+  var drah = mode === 'plan' ? drahAll : mode === 'done' ? drahDone : drahLeft;
 
   var modeNote = mode === 'plan' ? 'celý plán' : mode === 'done' ? 'už spotrebované' : 'ešte treba';
   var aluNote = mode === 'left' ? 'ešte nenarezané' : mode === 'done' ? 'narezané' : 'celý plán';
   var polNote = mode === 'left' ? 'ešte nenasadené' : mode === 'done' ? 'nasadené' : 'celý plán';
+  var drahNote = mode === 'left' ? 'ešte nenamontované' : mode === 'done' ? 'namontované' : 'celý plán';
 
   function secHdr(color, name, note) {
     return '<div style="margin-bottom:18px"><div class="sb-sec-hdr"><div class="sb-dot" style="background:' + color + '"></div>' +
@@ -1143,8 +1147,8 @@ function renderSummary() {
   html += '<div>' + secHdr('var(--teal)', 'Spodky', aluNote) +
     '<div class="hl-grid">' + hlCard('typ', '×6', alu.spodok6, 'var(--teal)') + hlCard('typ', '×5', alu.spodok5, 'var(--teal)') + '</div>' +
     totalBox('6,182,212', 'var(--teal)', 'Celkom spodky', '×5 + ×6', alu.totalSpodok, aluDone.totalSpodok, aluAll.totalSpodok) + '</div></div>';
-  html += '<div>' + secHdr('var(--green)', 'Dráhy (koľajnice)', aluNote) +
-    totalBoxM('16,185,129', 'var(--green)', 'Celkom dráh', 'v metroch', alu.totalDrah, aluDone.totalDrah, aluAll.totalDrah) + '</div></div>';
+  html += '<div>' + secHdr('var(--green)', 'Dráhy (koľajnice)', drahNote) +
+    totalBoxM('16,185,129', 'var(--green)', 'Celkom dráh', 'v metroch', drah.totalDrah, drahDone.totalDrah, drahAll.totalDrah) + '</div></div>';
   html += '</div>';
 
   /* ===== hrubý profil ===== */
@@ -1159,8 +1163,8 @@ function renderSummary() {
       '<div>' + secHdr('var(--orange)', 'Hrubý profil — Spodky', aluNote) +
         '<div class="hl-grid">' + hlCard('typ', '×6', alu.spodok6h, 'var(--orange)') + hlCard('typ', '×5', alu.spodok5h, 'var(--orange)') + '</div>' +
         totalBox('249,115,22', 'var(--orange)', 'Spodky hrubý', '×5 + ×6', alu.totalSpodokH, aluDone.totalSpodokH, aluAll.totalSpodokH) + '</div></div>' +
-      '<div>' + secHdr('var(--orange)', 'Hrubý profil — Dráhy', aluNote) +
-        totalBoxM('249,115,22', 'var(--orange)', 'Dráhy hrubý', 'v metroch', alu.totalDrahH, aluDone.totalDrahH, aluAll.totalDrahH) + '</div></div>' +
+      '<div>' + secHdr('var(--orange)', 'Hrubý profil — Dráhy', drahNote) +
+        totalBoxM('249,115,22', 'var(--orange)', 'Dráhy hrubý', 'v metroch', drah.totalDrahH, drahDone.totalDrahH, drahAll.totalDrahH) + '</div></div>' +
       '</div></div>';
   }
 
@@ -1488,6 +1492,7 @@ function buildStockItems() {
   var m = stockMode === 'plan' ? 'plan' : 'left';
   var alu = aggregate(subset(ST_ALU, m));
   var pol = aggregate(subset(ST_POLY, m));
+  var drahAgg = aggregate(subset(ST_MONT, m));
   var L = ['5,2', '5,7', '6'];
   function n(by, byH, l) { return (by[l] || 0) - (byH[l] || 0); }
 
@@ -1511,8 +1516,8 @@ function buildStockItems() {
         { k: 'Pc21', l: 'Číry 2,1 m', need: pol.poly.ciry['2,1'] },
         { k: 'Pc125', l: 'Číry 1,25 m', need: pol.poly.ciry['1,25'] }] },
     { g: 'Dráhy (koľajnice)', c: 'var(--green)', note: 'normálne + hrubé, v metroch', items: [
-        { k: 'DrahyN', l: 'Dráhy — normálny (m)', need: Math.round((alu.totalDrah - alu.totalDrahH) * 100) / 100 },
-        { k: 'DrahyH', l: 'Dráhy — hrubý (m)', need: alu.totalDrahH }] }
+        { k: 'DrahyN', l: 'Dráhy — normálny (m)', need: Math.round((drahAgg.totalDrah - drahAgg.totalDrahH) * 100) / 100 },
+        { k: 'DrahyH', l: 'Dráhy — hrubý (m)', need: drahAgg.totalDrahH }] }
   ];
 }
 
