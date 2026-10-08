@@ -1230,12 +1230,13 @@ function renderSummary() {
   sb.innerHTML = html;
 }
 
-/* koľko zákaziek od ktorého modelu — počíta všetky riadky (aj manuálne, aj bez modelu), aby súčet sedel */
+/* koľko zákaziek od ktorého modelu — počíta aj manuálne a bez modelu, aby súčet sedel; Hotové a Namontované sa nerátajú */
 function renderModelCounts() {
-  if (!rows.length) return '';
+  var open = rows.filter(function (r) { return r.stav < 4; });
+  if (!open.length) return '';
   var cnt = {}, order = [];
   function bump(k) { if (!(k in cnt)) { cnt[k] = 0; order.push(k); } cnt[k]++; }
-  rows.forEach(function (r) {
+  open.forEach(function (r) {
     if (r.manual) bump('Manuálny riadok');
     else if (!r.model) bump('Bez modelu');
     else bump(MODELS_DISPLAY[r.model] || r.model);
@@ -1253,7 +1254,7 @@ function renderModelCounts() {
   }).join('');
   return '<div style="margin-top:24px;border-top:1px solid var(--border);padding-top:22px;">' +
     '<div class="sub-section-title" style="color:var(--accent)"><div style="width:8px;height:8px;border-radius:50%;background:var(--accent)"></div>' +
-    'Počet zákaziek podľa modelu <span style="margin-left:auto;font-weight:500;letter-spacing:0;text-transform:none;color:var(--text3)">spolu ' + rows.length + ' zákaziek</span></div>' +
+    'Počet zákaziek podľa modelu <span style="margin-left:auto;font-weight:500;letter-spacing:0;text-transform:none;color:var(--text3)">spolu ' + open.length + ' zákaziek · bez hotových a namontovaných</span></div>' +
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;">' + tiles + '</div></div>';
 }
 
