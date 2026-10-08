@@ -1226,7 +1226,35 @@ function renderSummary() {
 
   /* ===== čo čaká na ďalší krok ===== */
   html += renderQueues();
+  html += renderModelCounts();
   sb.innerHTML = html;
+}
+
+/* koľko zákaziek od ktorého modelu — počíta všetky riadky (aj manuálne, aj bez modelu), aby súčet sedel */
+function renderModelCounts() {
+  if (!rows.length) return '';
+  var cnt = {}, order = [];
+  function bump(k) { if (!(k in cnt)) { cnt[k] = 0; order.push(k); } cnt[k]++; }
+  rows.forEach(function (r) {
+    if (r.manual) bump('Manuálny riadok');
+    else if (!r.model) bump('Bez modelu');
+    else bump(MODELS_DISPLAY[r.model] || r.model);
+  });
+  var seq = MODELS.map(function (m) { return MODELS_DISPLAY[m] || m; }).concat(['Manuálny riadok', 'Bez modelu']);
+  order.sort(function (a, b) {
+    var ia = seq.indexOf(a), ib = seq.indexOf(b);
+    return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+  });
+  var tiles = order.map(function (k) {
+    var dim = (k === 'Manuálny riadok' || k === 'Bez modelu');
+    return '<div class="card" style="padding:10px 14px;display:flex;align-items:baseline;gap:10px">' +
+      '<span class="mono" style="font-size:22px;font-weight:700;color:' + (dim ? 'var(--text2)' : 'var(--accent)') + '">' + cnt[k] + '×</span>' +
+      '<span style="font-size:12.5px;color:' + (dim ? 'var(--text2)' : 'var(--text)') + '">' + esc(k) + '</span></div>';
+  }).join('');
+  return '<div style="margin-top:24px;border-top:1px solid var(--border);padding-top:22px;">' +
+    '<div class="sub-section-title" style="color:var(--accent)"><div style="width:8px;height:8px;border-radius:50%;background:var(--accent)"></div>' +
+    'Počet zákaziek podľa modelu <span style="margin-left:auto;font-weight:500;letter-spacing:0;text-transform:none;color:var(--text3)">spolu ' + rows.length + ' zákaziek</span></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;">' + tiles + '</div></div>';
 }
 
 function renderQueues() {
