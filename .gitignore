@@ -5,3 +5,5 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 *.lnk
+node_modules/
+.env

@@ -1,0 +1,9 @@
+.git
+.github
+node_modules
+*.json.bak
+oceanik-vyroba-*.json
+serve.ps1
+*.bat
+README.md
+DEPLOY.md

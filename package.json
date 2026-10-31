@@ -1,0 +1,16 @@
+{
+  "name": "vyroba-oceanik",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Oceanik – sledovanie výroby (server s PostgreSQL)",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
+}

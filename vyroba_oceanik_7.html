@@ -393,6 +393,7 @@ var Store = {
   },
   async saveAll(list) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    Remote.queue('zakazky', list);
     // API verzia:  await fetch('/api/orders', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(list)});
   },
   async put(order) {
@@ -410,14 +411,134 @@ function persist() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(function () {
     Store.saveAll(rows).then(function () {
+      syncToFile();
+      if (Remote.enabled()) return; // stav ukladania na server zobrazuje Remote
       var el = document.getElementById('saved');
       el.textContent = '✓ uložené';
       el.classList.add('flash');
       setTimeout(function () { el.classList.remove('flash'); el.textContent = 'uložené'; }, 1400);
-      syncToFile();
     });
   }, 250);
 }
+
+/* ---------- 1a. SERVER (PostgreSQL cez /api) ----------
+   Aktívne iba ak appku servíruje server/server.js (EasyPanel). Pri otvorení
+   cez file:// alebo serve.ps1 API neexistuje a appka beží ako doteraz
+   (iba localStorage). localStorage ostáva rýchla cache aj v serverovom režime. */
+var Remote = (function () {
+  var enabled = false;
+  var revs = {};          // posledná známa revízia každej kolekcie
+  var pending = {};       // kolekcie čakajúce na odoslanie
+  var timer = null, retryTimer = null, inFlight = false, suspended = false;
+
+  function setStatus(txt, warn) {
+    var el = document.getElementById('saved');
+    if (!el) return;
+    el.textContent = txt;
+    el.style.color = warn ? 'var(--s1, #f59e0b)' : '';
+  }
+
+  async function init() {
+    if (location.protocol === 'file:') return null;
+    try {
+      var r = await fetch('api/state', { cache: 'no-store', credentials: 'same-origin' });
+      if (!r.ok) return null;
+      var data = await r.json();
+      if (!data || !data.revs) return null;
+      enabled = true;
+      revs = data.revs;
+      return data;
+    } catch (e) { return null; }
+  }
+
+  function queue(key, value) {
+    if (!enabled || suspended) return;
+    pending[key] = value;
+    clearTimeout(timer);
+    timer = setTimeout(flush, 400);
+  }
+
+  async function flush() {
+    if (inFlight) { clearTimeout(timer); timer = setTimeout(flush, 300); return; }
+    var keys = Object.keys(pending);
+    if (!keys.length) return;
+    inFlight = true;
+    var failed = false;
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      var val = pending[k];
+      delete pending[k];
+      try {
+        var body = JSON.stringify(val);
+        var r = await fetch('api/state/' + k, {
+          method: 'PUT', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: body,
+          keepalive: body.length < 60000 // dobehne aj pri zatváraní okna
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var j = await r.json();
+        revs[k] = j.rev;
+      } catch (e) {
+        if (!(k in pending)) pending[k] = val; // novšia hodnota má prednosť
+        failed = true;
+      }
+    }
+    inFlight = false;
+    if (failed) {
+      setStatus('⚠ neuložené na server', true);
+      clearTimeout(retryTimer);
+      retryTimer = setTimeout(flush, 5000);
+    } else {
+      setStatus('✓ uložené na server');
+    }
+  }
+
+  function hasPending() { return inFlight || Object.keys(pending).length > 0; }
+
+  /* Zistí, či niekto iný zmenil dáta, a ak áno, načíta ich. */
+  async function refreshIfChanged() {
+    if (!enabled || hasPending()) return;
+    var ae = document.activeElement;
+    if (ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) return; // nerušiť počas písania
+    try {
+      var r = await fetch('api/revs', { cache: 'no-store', credentials: 'same-origin' });
+      if (!r.ok) return;
+      var j = await r.json();
+      var changed = Object.keys(j.revs).some(function (k) { return (j.revs[k] || 0) > (revs[k] || 0); });
+      if (!changed || hasPending()) return;
+      var s = await fetch('api/state', { cache: 'no-store', credentials: 'same-origin' });
+      if (!s.ok) return;
+      var data = await s.json();
+      if (hasPending()) return;
+      revs = data.revs;
+      var cur = currentSnapshot();
+      suspended = true;
+      try {
+        applySnapshot({
+          zakazky: data.zakazky || cur.zakazky,
+          terasy: data.terasy || cur.terasy,
+          opravy: data.opravy || cur.opravy,
+          sklad: data.sklad || cur.sklad
+        });
+      } finally {
+        // persist() zapisuje s oneskorením — necháme ho dobehnúť, kým znovu povolíme odosielanie
+        setTimeout(function () { suspended = false; }, 800);
+      }
+      setStatus('↻ načítané zo servera');
+    } catch (e) {}
+  }
+
+  return {
+    init: init, queue: queue, flush: flush, hasPending: hasPending,
+    refreshIfChanged: refreshIfChanged,
+    enabled: function () { return enabled; }
+  };
+})();
+
+window.addEventListener('beforeunload', function (e) {
+  if (Remote.enabled() && Remote.hasPending()) { Remote.flush(); e.preventDefault(); e.returnValue = ''; }
+});
 
 /* ---------- 1b. PERZISTENCIA DO SÚBORU (File System Access API) ----------
    localStorage zostáva rýchla cache (číta sa okamžite pri štarte).
@@ -1479,6 +1600,7 @@ var StockStore = {
   },
   save: function (obj) {
     localStorage.setItem(STOCK_KEY, JSON.stringify(obj));
+    Remote.queue('sklad', obj);
     syncToFile();
     // API verzia:  await fetch('/api/stock', {method:'PUT', body:JSON.stringify(obj)});
   }
@@ -1712,7 +1834,7 @@ var oid = 1;
 
 var OpravaStore = {
   load: function () { try { return JSON.parse(localStorage.getItem(OPRAVY_KEY)) || []; } catch (e) { return []; } },
-  save: function (list) { localStorage.setItem(OPRAVY_KEY, JSON.stringify(list)); syncToFile(); }
+  save: function (list) { localStorage.setItem(OPRAVY_KEY, JSON.stringify(list)); Remote.queue('opravy', list); syncToFile(); }
   // API verzia: fetch('/api/opravy', ...)
 };
 function saveOpravy() { OpravaStore.save(opravy); }
@@ -1997,7 +2119,7 @@ function terasaTyp(k) {
 
 var TerasaStore = {
   load: function () { try { return JSON.parse(localStorage.getItem(TERASY_KEY)) || []; } catch (e) { return []; } },
-  save: function (list) { localStorage.setItem(TERASY_KEY, JSON.stringify(list)); syncToFile(); }
+  save: function (list) { localStorage.setItem(TERASY_KEY, JSON.stringify(list)); Remote.queue('terasy', list); syncToFile(); }
   // API verzia: fetch('/api/terasy', ...)
 };
 function saveTerasy() { TerasaStore.save(terasy); }
@@ -2068,6 +2190,14 @@ function renderTerasy() {
 
 /* ---------- 16. INIT ---------- */
 (async function init() {
+  /* --- server (PostgreSQL): ak beží, jeho dáta majú prednosť pred localStorage --- */
+  var remote = await Remote.init();
+  if (remote) {
+    if (remote.zakazky) localStorage.setItem(STORAGE_KEY, JSON.stringify(remote.zakazky));
+    if (remote.terasy) localStorage.setItem(TERASY_KEY, JSON.stringify(remote.terasy));
+    if (remote.opravy) localStorage.setItem(OPRAVY_KEY, JSON.stringify(remote.opravy));
+    if (remote.sklad) localStorage.setItem(STOCK_KEY, JSON.stringify(remote.sklad));
+  }
   renderChips();
   stock = StockStore.load();
   renderMestaDatalist();
@@ -2084,12 +2214,22 @@ function renderTerasy() {
   document.getElementById('saved').textContent = stored ? 'uložené' : '';
   if (!stored) persist();
 
+  if (remote) {
+    // prvé spustenie so serverom: nahraj lokálne dáta, ktoré na serveri ešte nie sú
+    var snap = currentSnapshot();
+    ['zakazky', 'terasy', 'opravy', 'sklad'].forEach(function (k) { if (!remote[k]) Remote.queue(k, snap[k]); });
+    document.getElementById('saved').textContent = 'server ✓';
+    setInterval(Remote.refreshIfChanged, 30000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) Remote.refreshIfChanged(); });
+    window.addEventListener('focus', Remote.refreshIfChanged);
+  }
+
   /* --- súbor na disku (git) --- */
   await FilePersistence.restoreHandle();
   updateFileStatusUI('ok');
   if (FilePersistence.hasHandle()) {
     await checkFileForExternalChanges();
-  } else if (FilePersistence.supported && !localStorage.getItem(FILE_BANNER_DISMISSED_KEY)) {
+  } else if (!remote && FilePersistence.supported && !localStorage.getItem(FILE_BANNER_DISMISSED_KEY)) {
     var banner = document.getElementById('fileConnectBanner');
     if (banner) banner.style.display = 'flex';
   }
