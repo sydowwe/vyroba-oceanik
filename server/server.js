@@ -10,14 +10,11 @@
  * Premenné prostredia:
  *   DATABASE_URL          postgres://user:heslo@host:5432/db   (povinné)
  *   PORT                  default 3000
- *   BASIC_AUTH_USER       ak je nastavené spolu s heslom, appka vyžaduje prihlásenie
- *   BASIC_AUTH_PASSWORD
  *   PGSSL                 "true" ak DB vyžaduje SSL (v rámci EasyPanelu netreba)
  */
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
-const crypto = require('node:crypto');
 const { Pool } = require('pg');
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -27,9 +24,6 @@ const KEYS = ['zakazky', 'terasy', 'opravy', 'sklad'];
 const MAX_BODY = 10 * 1024 * 1024;
 const HISTORY_EVERY_MIN = 15;   // záloha kolekcie do histórie najčastejšie raz za 15 min
 const HISTORY_KEEP = 2000;      // max. počet záznamov histórie na kolekciu
-
-const AUTH_USER = process.env.BASIC_AUTH_USER || '';
-const AUTH_PASS = process.env.BASIC_AUTH_PASSWORD || '';
 
 if (!process.env.DATABASE_URL) {
   console.error('Chýba DATABASE_URL');
@@ -87,21 +81,6 @@ function readBody(req) {
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     req.on('error', reject);
   });
-}
-
-function safeEqual(a, b) {
-  const ba = Buffer.from(a), bb = Buffer.from(b);
-  return ba.length === bb.length && crypto.timingSafeEqual(ba, bb);
-}
-
-function authorized(req) {
-  if (!AUTH_USER || !AUTH_PASS) return true;
-  const h = req.headers.authorization || '';
-  if (!h.startsWith('Basic ')) return false;
-  const [u, ...rest] = Buffer.from(h.slice(6), 'base64').toString('utf8').split(':');
-  const okUser = safeEqual(u, AUTH_USER);
-  const okPass = safeEqual(rest.join(':'), AUTH_PASS);
-  return okUser && okPass;
 }
 
 /* ---------- API ---------- */
@@ -172,10 +151,6 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { ok: true, version: process.env.GIT_SHA || 'dev' });
     }
 
-    if (!authorized(req)) {
-      return send(res, 401, 'Prihlásenie je povinné', { 'WWW-Authenticate': 'Basic realm="Oceanik", charset="UTF-8"' });
-    }
-
     if (req.method === 'GET' && (p === '/' || p === '/index.html' || p === '/vyroba_oceanik_7.html')) {
       const body = indexHtml();
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': body.length, 'Cache-Control': 'no-store' });
@@ -216,7 +191,7 @@ const server = http.createServer(async (req, res) => {
 
 migrate()
   .then(() => {
-    server.listen(PORT, () => console.log(`Oceanik beží na porte ${PORT}${AUTH_USER ? ' (s prihlásením)' : ''}`));
+    server.listen(PORT, () => console.log(`Oceanik beží na porte ${PORT}`));
   })
   .catch((e) => { console.error('Migrácia DB zlyhala:', e); process.exit(1); });
 

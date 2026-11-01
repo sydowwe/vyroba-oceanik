@@ -29,10 +29,7 @@ Tabuľky si server vytvorí sám pri štarte.
 3. **Environment**:
    ```
    DATABASE_URL=postgres://postgres:HESLO@oceanik_db:5432/oceanik
-   BASIC_AUTH_USER=oceanik
-   BASIC_AUTH_PASSWORD=silne-heslo
    ```
-   `BASIC_AUTH_*` sú voliteľné, ale **odporúčané** – bez nich je appka aj s dátami zákazníkov verejná.
 4. **Domains**: pridaj doménu (napr. `vyroba.tvojadomena.sk`), port **3000**, zapni HTTPS.
 5. **Deploy** (prvý raz ručne – najprv musí prebehnúť GitHub Action, aby image existoval).
 6. **Deployments → Deploy Webhook** – skopíruj URL.
